@@ -3,793 +3,247 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Karar Çarkım - Eğlenceli Karar Verici</title>
+    <title>Karar Çarkım - Eğlence Başlasın</title>
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-secondary: #64748b;
-            --primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --accent: #f43f5e;
-            --success: #22c55e;
-            --border: #e2e8f0;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-            --transition: all 0.3s ease;
+            --bg-color: #f0f2f5; --card-bg: #ffffff; --text-main: #1e293b;
+            --text-secondary: #64748b; --primary: #6366f1; --accent: #f43f5e;
+            --success: #10b981; --border: #e2e8f0; --shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.1);
         }
-
         [data-theme="dark"] {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-main: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border: #334155;
-            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --bg-color: #0b1120; --card-bg: #1e293b; --text-main: #f8fafc;
+            --text-secondary: #94a3b8; --border: #334155; --shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.4);
         }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            transition: background-color 0.3s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px 15px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 500px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-        }
-
-        .title-group h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .balance-badge {
-            background: var(--primary);
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.3);
-        }
-
-        .theme-toggle {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            padding: 8px;
-            border-radius: 12px;
-            cursor: pointer;
-            color: var(--text-main);
-        }
-
-        /* Wheel Section */
-        .wheel-box {
-            position: relative;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            background: var(--card-bg);
-            padding: 25px 15px;
-            border-radius: 24px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .wheel-container {
-            position: relative;
-            width: 280px;
-            height: 280px;
-            margin-bottom: 20px;
-        }
-
-        #wheelCanvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-        }
-
-        .pointer {
-            position: absolute;
-            top: -10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 40px;
-            z-index: 10;
-        }
-
-        .spin-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 40px;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: 50px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-            width: 100%;
-            max-width: 250px;
-            transition: var(--transition);
-        }
-
-        .spin-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            filter: grayscale(1);
-        }
-
-        .spin-limit-info {
-            font-size: 0.7rem;
-            margin-top: 10px;
-            color: var(--text-secondary);
-            font-weight: 600;
-        }
-
-        /* Ready Packages Grid */
-        .section-card {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 18px;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-
-        .cat-item {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            text-align: center;
-            position: relative;
-            transition: var(--transition);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            color: var(--text-main);
-        }
-
-        .cat-item.used:not(.is-unlimited) {
-            opacity: 0.6;
-            border-style: dashed;
-        }
-
-        .badge-lock {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: var(--accent);
-            color: white;
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 10px;
-            display: none;
-        }
-
-        /* Options Management */
-        .input-group {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-            margin-bottom: 15px;
-        }
-
-        input {
-            flex: 1;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--bg-color);
-            color: var(--text-main);
-            outline: none;
-        }
-
-        .add-btn {
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 0 15px;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-        }
-
-        .options-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            padding-right: 5px;
-        }
-
-        .options-list::-webkit-scrollbar {
-            width: 4px;
-        }
-
-        .options-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 10px;
-        }
-
-        .option-item {
-            background: var(--bg-color);
-            border: 1px solid var(--border);
-            padding: 10px 15px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            transition: var(--transition);
-        }
-
-        .option-text {
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .option-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .btn-icon {
-            cursor: pointer;
-            font-size: 1rem;
-            opacity: 0.7;
-            transition: var(--transition);
-        }
-
-        .btn-icon:hover {
-            opacity: 1;
-        }
-
-        .btn-delete { color: var(--accent); }
-        .btn-edit { color: var(--primary); }
-
-        /* Pricing Cards */
-        .pricing-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 12px;
-            margin-top: 15px;
-        }
-
-        .price-card {
-            border: 2px solid var(--border);
-            border-radius: 16px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: var(--transition);
-            text-align: left;
-        }
-
-        .price-card:hover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-        }
-
-        .price-card.featured {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.05);
-            position: relative;
-        }
-
-        .featured-tag {
-            position: absolute;
-            top: -10px;
-            right: 15px;
-            background: var(--primary);
-            color: white;
-            font-size: 0.6rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-        }
-
-        .price-info h4 { font-size: 0.95rem; margin-bottom: 2px; }
-        .price-info p { font-size: 0.75rem; color: var(--text-secondary); }
-        .price-value { font-weight: 800; color: var(--primary); font-size: 1rem; }
-
-        /* General UI */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-
-        .payment-modal {
-            background: var(--card-bg);
-            width: 100%;
-            max-width: 400px;
-            border-radius: 24px;
-            padding: 25px;
-            text-align: center;
-        }
-
-        .result-val { font-size: 2rem; font-weight: 800; color: var(--primary); margin: 20px 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 20px 15px; transition: 0.3s; }
+        .container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 20px; }
         
-        footer {
-            text-align: center;
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            margin: 20px 0;
-            padding-bottom: 20px;
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
+        .logo-text { font-size: 1.8rem; font-weight: 900; letter-spacing: -1px; background: linear-gradient(135deg, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        .stats-bar { display: flex; gap: 10px; }
+        .stat-badge { background: var(--card-bg); padding: 6px 14px; border-radius: 15px; font-size: 0.8rem; font-weight: 700; border: 1px solid var(--border); box-shadow: var(--shadow); display: flex; align-items: center; gap: 5px; }
+
+        .wheel-box { background: var(--card-bg); padding: 35px 15px; border-radius: 30px; box-shadow: var(--shadow); border: 1px solid var(--border); text-align: center; position: relative; overflow: hidden; }
+        .wheel-container { position: relative; width: 300px; height: 300px; margin: 0 auto 25px; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15)); }
+        #wheelCanvas { width: 100%; height: 100%; border-radius: 50%; border: 8px solid var(--card-bg); }
+        .pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 40px; height: 50px; z-index: 10; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2)); }
+        
+        .spin-btn { 
+            background: linear-gradient(135deg, var(--primary), #4f46e5); color: white; border: none; 
+            padding: 18px 50px; font-size: 1.1rem; font-weight: 800; border-radius: 50px; cursor: pointer; 
+            width: 100%; max-width: 280px; transition: 0.3s; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .spin-btn:active { transform: scale(0.95); }
+        .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .section-card { background: var(--card-bg); border-radius: 25px; padding: 20px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+        .card-title { font-weight: 800; font-size: 1rem; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        
+        .category-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .cat-item { 
+            background: var(--bg-color); border: 1px solid var(--border); padding: 15px; border-radius: 18px; 
+            font-size: 0.9rem; cursor: pointer; text-align: center; font-weight: 600; transition: 0.2s;
+        }
+        .cat-item:hover { transform: translateY(-3px); border-color: var(--primary); }
+        
+        .history-list { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0; scrollbar-width: none; }
+        .history-item { 
+            background: var(--primary); color: white; padding: 8px 15px; border-radius: 12px; 
+            font-size: 0.75rem; white-space: nowrap; font-weight: 600; animation: fadeIn 0.5s ease;
         }
 
-        #confettiCanvas {
-            position: fixed;
-            top: 0; left: 0; pointer-events: none;
-            width: 100%; height: 100%; z-index: 2000;
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); display: none; justify-content: center; 
+            align-items: center; z-index: 1000; backdrop-filter: blur(10px); 
         }
+        .result-card { 
+            background: var(--card-bg); width: 85%; max-width: 350px; padding: 40px 20px; 
+            border-radius: 35px; text-align: center; border: 2px solid var(--primary);
+            transform: scale(0.8); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .modal-overlay.active .result-card { transform: scale(1); }
+        .result-title { font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; }
+        .result-text { font-size: 2.5rem; font-weight: 900; color: var(--primary); margin: 20px 0; line-height: 1.2; }
+
+        footer { text-align: center; padding: 20px; font-size: 0.75rem; color: var(--text-secondary); opacity: 0.8; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body data-theme="light">
-
-    <canvas id="confettiCanvas"></canvas>
-
+    <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; pointer-events:none; z-index:2000;"></canvas>
+    
     <div class="container">
         <header>
-            <div class="title-group">
-                <h1>Karar Çarkım</h1>
-                <p>Hızlı ve eğlenceli seçimler.</p>
-            </div>
-            <div class="header-actions">
-                <div id="balanceDisplay" class="balance-badge">0 Hak</div>
-                <button class="theme-toggle" onclick="toggleTheme()">
-                    <span id="themeIcon">🌙</span>
-                </button>
+            <div class="logo-text">KARAR ÇARKIM</div>
+            <div class="stats-bar">
+                <div id="balBadge" class="stat-badge">✨ 3 Hak</div>
+                <button onclick="toggleTheme()" class="stat-badge" style="cursor:pointer;">🌓</button>
             </div>
         </header>
 
         <section class="wheel-box">
             <div class="wheel-container">
-                <svg class="pointer" viewBox="0 0 30 40">
-                    <path d="M15 40 L30 10 A15 15 0 1 0 0 10 Z" fill="#f43f5e" />
-                </svg>
+                <svg class="pointer" viewBox="0 0 30 40"><path d="M15 40 L30 10 A15 15 0 1 0 0 10 Z" fill="#f43f5e" stroke="white" stroke-width="2"/></svg>
                 <canvas id="wheelCanvas" width="600" height="600"></canvas>
             </div>
-            <button id="spinBtn" class="spin-btn" onclick="startSpin()">ÇARKI ÇEVİR</button>
-            <div id="spinLimitText" class="spin-limit-info"></div>
+            <button id="spinBtn" class="spin-btn" onclick="startSpin()">ŞANSINI DENE!</button>
         </section>
 
         <section class="section-card">
-            <div style="font-weight:700; margin-bottom:12px;">Hazır Paketler</div>
-            <div class="category-grid" id="categoryGrid">
-                <div class="cat-item" data-id="food" onclick="loadCategory('food')">🍕 Ne Yesem? <span class="badge-lock">🔒</span></div>
-                <div class="cat-item" data-id="weekend" onclick="loadCategory('weekend')">🎭 Hafta Sonu? <span class="badge-lock">🔒</span></div>
-                <div class="cat-item" data-id="movie" onclick="loadCategory('movie')">🍿 Film Gecesi <span class="badge-lock">🔒</span></div>
-                <div class="cat-item" data-id="kid" onclick="loadCategory('kid')">🎡 Çocuk <span class="badge-lock">🔒</span></div>
-                <div class="cat-item" data-id="study" onclick="loadCategory('study')">📚 Ders <span class="badge-lock">🔒</span></div>
-                <div class="cat-item" data-id="cleaning" onclick="loadCategory('cleaning')">🧹 Ev İşleri <span class="badge-lock">🔒</span></div>
+            <div class="card-title">🕒 Karar Geçmişi</div>
+            <div id="historyList" class="history-list">
+                <span style="color:var(--text-secondary); font-size:0.8rem;">Henüz karar verilmedi...</span>
             </div>
         </section>
 
         <section class="section-card">
-            <div style="font-weight:700;">Özel Seçeneklerin</div>
-            <div class="input-group">
-                <input type="text" id="optionInput" placeholder="Yeni bir şey yaz..." onkeypress="if(event.key==='Enter')addOption()">
-                <button class="add-btn" onclick="addOption()">Ekle</button>
-            </div>
-            <div id="optionsList" class="options-list">
-                <!-- Seçenekler JS ile buraya gelecek -->
+            <div class="card-title">🎯 Hazır Paketler</div>
+            <div class="category-grid">
+                <div class="cat-item" onclick="loadPack('food')">🍕 Yemek</div>
+                <div class="cat-item" onclick="loadPack('movie')">🍿 Sinema</div>
+                <div class="cat-item" onclick="loadPack('game')">🎮 Oyun</div>
+                <div class="cat-item" onclick="loadPack('activity')">🎢 Aktivite</div>
             </div>
         </section>
 
-        <section class="section-card" id="premiumSection" style="text-align: center; border: 1px solid var(--primary); background: rgba(99, 102, 241, 0.05);">
-            <h3 style="font-size: 0.9rem; margin-bottom: 5px;">Kredin mi bitti?</h3>
-            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px;">Daha fazla çevirme hakkı alarak eğlenceye devam et.</p>
-            <button class="spin-btn" style="padding: 10px 20px; font-size: 0.8rem;" onclick="openPayment()">HAK SATIN AL</button>
+        <section class="section-card">
+            <div class="card-title">📝 Kendi Listeni Yap</div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <input type="text" id="optIn" placeholder="Seçenek yaz..." style="flex:1; padding:15px; border-radius:15px; border:1px solid var(--border); background:var(--bg-color); color:var(--text-main); outline:none; font-weight:600;">
+                <button onclick="addOpt()" style="background:var(--success); color:white; border:none; width:50px; border-radius:15px; font-size:1.5rem; font-weight:bold; cursor:pointer;">+</button>
+            </div>
+            <div id="customList" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;"></div>
         </section>
 
         <footer>
-            <p>© Gökhan ELGÜL tarafından tasarlanmıştır.</p>
+            <p>© Gökhan ELGÜL tarafından tasarlanmıştır.<br>Eğlence ve Karar Bir Arada!</p>
         </footer>
     </div>
 
-    <div id="modalOverlay" class="modal-overlay" onclick="closeModal()">
-        <div id="modalContent" class="payment-modal" onclick="event.stopPropagation()"></div>
+    <div id="modal" class="modal-overlay" onclick="closeM()">
+        <div class="result-card" onclick="event.stopPropagation()">
+            <div class="result-title">Çarkın Seçimi</div>
+            <div id="resText" class="result-text">...</div>
+            <button onclick="closeM()" class="spin-btn" style="padding:12px 30px; font-size:0.9rem;">HARİKA!</button>
+        </div>
     </div>
 
     <script>
-        const PRODUCT_IDS = {
-            BRONZE: 'spin_pack_50',
-            SILVER: 'spin_pack_200',
-            UNLIMITED: 'spin_unlimited'
-        };
-        
-        const DAILY_FREE_LIMIT = 3; 
-        const INITIAL_DEFAULTS = ["Film İzle", "Kitap Oku", "Dışarı Çık", "Spor Yap", "Oyun Oyna", "Yeni Tarif Dene"];
+        // --- SES SİSTEMİ (Kod İçine Gömülü) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTick() {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+        function playWin() {
+            [523.25, 659.25, 783.99].forEach((f, i) => {
+                const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.frequency.setValueAtTime(f, audioCtx.currentTime + i * 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i * 0.1 + 0.3);
+                osc.start(audioCtx.currentTime + i * 0.1); osc.stop(audioCtx.currentTime + i * 0.1 + 0.3);
+            });
+        }
 
-        let options = [];
-        let isUnlimited = false;
-        let extraSpins = 0; 
-        let dailyUsed = 0;
-        let usedPacks = [];
-        let activePackId = null;
-        
-        let isSpinning = false;
-        let currentAngle = 0;
-        let startAngle = 0;
-        const colors = ['#6366f1', '#f43f5e', '#22c55e', '#f59e0b', '#ec4899', '#8b5cf6'];
-
-        const canvas = document.getElementById('wheelCanvas');
-        const ctx = canvas.getContext('2d');
+        // --- MANTIK VE GÖRSEL ---
+        let opts = ["Yemek", "Film", "Kitap", "Spor", "Oyun", "Uyku"];
+        let history = []; let isSpinning = false; let currentAng = 0; let lastTickAng = 0;
+        let dailyLimit = 3; let usedToday = 0; let isPremium = false;
+        const colors = ['#6366f1', '#f43f5e', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899'];
+        const canvas = document.getElementById('wheelCanvas'); const ctx = canvas.getContext('2d');
 
         window.onload = () => {
-            checkDailyReset();
-            loadStorage();
-            initBilling();
-            updateUI();
-            drawWheel();
+            const saved = localStorage.getItem('kc_opts'); if(saved) opts = JSON.parse(saved);
+            const h = localStorage.getItem('kc_hist'); if(h) history = JSON.parse(h);
+            isPremium = localStorage.getItem('kc_prem') === 'true';
+            usedToday = parseInt(localStorage.getItem('kc_used') || '0');
+            updateUI(); draw();
         };
 
-        function checkDailyReset() {
-            const today = new Date().toDateString();
-            const last = localStorage.getItem('kc_last_date');
-            if (last !== today) {
-                localStorage.setItem('kc_daily_used', '0');
-                localStorage.setItem('kc_last_date', today);
-                localStorage.removeItem('kc_used_packs'); 
-            }
-        }
-
-        function loadStorage() {
-            const savedOpts = localStorage.getItem('kc_opts');
-            const savedPacks = localStorage.getItem('kc_used_packs');
-            const savedUnlimited = localStorage.getItem('kc_unlimited');
-            const savedExtra = localStorage.getItem('kc_extra');
-            const savedDaily = localStorage.getItem('kc_daily_used');
-
-            // Eğer kayıtlı seçenek yoksa varsayılanları yükle
-            if (savedOpts) {
-                options = JSON.parse(savedOpts);
-            } else {
-                options = [...INITIAL_DEFAULTS];
-            }
-
-            if (savedPacks) usedPacks = JSON.parse(savedPacks);
-            if (savedUnlimited === 'true') isUnlimited = true;
-            if (savedExtra) extraSpins = parseInt(savedExtra);
-            if (savedDaily) dailyUsed = parseInt(savedDaily);
-        }
-
-        function saveStorage() {
-            localStorage.setItem('kc_opts', JSON.stringify(options));
-            localStorage.setItem('kc_used_packs', JSON.stringify(usedPacks));
-            localStorage.setItem('kc_unlimited', isUnlimited);
-            localStorage.setItem('kc_extra', extraSpins);
-            localStorage.setItem('kc_daily_used', dailyUsed);
-        }
-
-        function initBilling() {
-            if (window.store) {
-                window.store.refresh();
-            }
-        }
-
         function updateUI() {
-            const bal = document.getElementById('balanceDisplay');
-            if (isUnlimited) {
-                bal.innerText = "Sınırsız 👑";
-                bal.style.background = "var(--accent)";
-            } else {
-                bal.innerText = `${extraSpins} Hak`;
-            }
-
-            const limitText = document.getElementById('spinLimitText');
-            if (isUnlimited) {
-                limitText.innerText = "Sınırsız mod aktif!";
-            } else {
-                const freeRem = Math.max(0, DAILY_FREE_LIMIT - dailyUsed);
-                limitText.innerText = `Ücretsiz: ${freeRem} | Ekstra: ${extraSpins}`;
-            }
-
-            const items = document.querySelectorAll('.cat-item');
-            items.forEach(item => {
-                const id = item.getAttribute('data-id');
-                const lock = item.querySelector('.badge-lock');
-                if (!isUnlimited && usedPacks.includes(id)) {
-                    item.classList.add('used');
-                    lock.style.display = 'block';
-                } else {
-                    item.classList.remove('used');
-                    lock.style.display = 'none';
-                }
-            });
-
-            if (isUnlimited) document.getElementById('premiumSection').style.display = 'none';
-            
-            saveStorage();
-            renderOptionsList();
+            document.getElementById('balBadge').innerText = isPremium ? "👑 Sınırsız" : `✨ ${dailyLimit - usedToday} Hak`;
+            const hList = document.getElementById('historyList');
+            if(history.length > 0) hList.innerHTML = history.slice(-5).reverse().map(item => `<span class="history-item">${item}</span>`).join('');
+            const cList = document.getElementById('customList');
+            cList.innerHTML = opts.map((o, i) => `
+                <div style="display:flex; justify-content:space-between; background:var(--bg-color); padding:10px 15px; border-radius:12px; font-size:0.85rem; border:1px solid var(--border);">
+                    <span>${o}</span><span onclick="remOpt(${i})" style="color:var(--accent); font-weight:bold; cursor:pointer;">×</span>
+                </div>
+            `).join('');
+            localStorage.setItem('kc_opts', JSON.stringify(opts));
+            localStorage.setItem('kc_hist', JSON.stringify(history));
         }
 
-        function loadCategory(id) {
-            if (!isUnlimited && usedPacks.includes(id)) {
-                openPayment("Bu paketin günlük kullanım hakkı bitti. Yarın tekrar açılacak!");
-                return;
-            }
-            const packs = {
-                food: ["Pizza", "Kebap", "Salata", "Burger", "Sushi", "Makarna"],
-                weekend: ["Sinema", "Piknik", "Konser", "Oyun", "Spor", "Yürüyüş"],
-                movie: ["Aksiyon", "Dram", "Komedi", "Korku", "Bilim Kurgu", "Belgesel"],
-                kid: ["Boyama", "Park", "Lego", "Kitap", "Dans", "Resim"],
-                study: ["Matematik", "Türkçe", "Fen", "İngilizce", "Tarih", "Edebiyat"],
-                cleaning: ["Mutfak", "Salon", "Balkon", "Banyo", "Camlar", "Toz Al"]
-            };
-            options = [...packs[id]];
-            activePackId = id;
-            updateUI();
-            drawWheel();
-            showSimpleModal("Paket Yüklendi", "Çark şu an seçtiğin paketle hazır!");
+        function draw() {
+            const sz = 600, center = 300, rad = 280, arc = (2 * Math.PI) / opts.length; ctx.clearRect(0,0,sz,sz);
+            opts.forEach((t, i) => {
+                const a = currentAng + i * arc;
+                ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, rad, a, a + arc);
+                ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+                ctx.save(); ctx.translate(center, center); ctx.rotate(a + arc/2);
+                ctx.textAlign = 'right'; ctx.fillStyle = 'white'; ctx.font = 'bold 24px sans-serif';
+                ctx.fillText(t.substring(0, 15), rad - 35, 10); ctx.restore();
+            });
+            ctx.beginPath(); ctx.arc(center, center, 20, 0, 2*Math.PI); ctx.fillStyle = 'white'; ctx.fill();
         }
 
         function startSpin() {
-            if (isSpinning || options.length < 2) return;
-
-            const canSpin = isUnlimited || dailyUsed < DAILY_FREE_LIMIT || extraSpins > 0;
-            const packLocked = !isUnlimited && activePackId && usedPacks.includes(activePackId);
-
-            if (!canSpin || packLocked) {
-                openPayment(packLocked ? "Bu paket bugünlük kilitli." : "Bugünlük hakların bitti!");
-                return;
-            }
-
-            isSpinning = true;
-            document.getElementById('spinBtn').disabled = true;
-
-            const duration = 4000;
-            const rotation = (8 + Math.random() * 5) * 2 * Math.PI;
-            const start = performance.now();
-
+            if(isSpinning || opts.length < 2) return;
+            if(!isPremium && usedToday >= dailyLimit) { alert("Hakkınız bitti!"); return; }
+            isSpinning = true; document.getElementById('spinBtn').disabled = true;
+            const dur = 4000; const rotation = (12 + Math.random() * 8) * 2 * Math.PI;
+            const start = performance.now(); const initialAng = currentAng;
             function animate(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                const ease = 1 - Math.pow(1 - progress, 4);
-                currentAngle = startAngle + rotation * ease;
-                drawWheel();
-                if (progress < 1) requestAnimationFrame(animate);
-                else {
-                    isSpinning = false;
-                    document.getElementById('spinBtn').disabled = false;
-                    startAngle = currentAngle % (2 * Math.PI);
-                    finishSpin();
-                }
+                const elapsed = now - start; const progress = Math.min(elapsed / dur, 1);
+                const ease = 1 - Math.pow(1 - progress, 4); currentAng = initialAng + rotation * ease;
+                const arcSize = (2 * Math.PI) / opts.length;
+                if(Math.floor(currentAng / arcSize) !== Math.floor(lastTickAng / arcSize)) { playTick(); lastTickAng = currentAng; }
+                draw();
+                if(progress < 1) requestAnimationFrame(animate);
+                else { isSpinning = false; document.getElementById('spinBtn').disabled = false; startAng = currentAng % (2 * Math.PI); finalize(); }
             }
             requestAnimationFrame(animate);
-            if (navigator.vibrate) navigator.vibrate(60);
         }
 
-        function finishSpin() {
-            const arc = (2 * Math.PI) / options.length;
-            let norm = (currentAngle + Math.PI / 2) % (2 * Math.PI);
-            let idx = Math.floor((2 * Math.PI - norm) / arc) % options.length;
-            if (idx < 0) idx += options.length;
-
-            if (!isUnlimited) {
-                if (dailyUsed < DAILY_FREE_LIMIT) {
-                    dailyUsed++;
-                } else if (extraSpins > 0) {
-                    extraSpins--;
-                }
-                
-                if (activePackId && !usedPacks.includes(activePackId)) {
-                    usedPacks.push(activePackId);
-                }
-            }
-
-            updateUI();
-            showResult(options[idx]);
-            triggerConfetti();
+        function finalize() {
+            const arc = (2 * Math.PI) / opts.length; const norm = (currentAng + Math.PI / 2) % (2 * Math.PI);
+            let idx = Math.floor((2 * Math.PI - norm) / arc) % opts.length; if(idx < 0) idx += opts.length;
+            const res = opts[idx]; history.push(res);
+            if(!isPremium) { usedToday++; localStorage.setItem('kc_used', usedToday); }
+            updateUI(); playWin(); showRes(res); triggerConfetti();
         }
 
-        function openPayment(msg = "Daha fazla karar için hak satın al!") {
-            const content = document.getElementById('modalContent');
-            content.innerHTML = `
-                <h3 style="margin-bottom:10px;">Hak Satın Al</h3>
-                <p style="font-size:0.8rem; color:var(--accent); margin-bottom:15px; font-weight:700;">${msg}</p>
-                <div class="pricing-grid">
-                    <div class="price-card" onclick="buyItem('BRONZE')">
-                        <div class="price-info">
-                            <h4>Bronz Paket</h4>
-                            <p>+50 Çevirme Hakkı</p>
-                        </div>
-                        <div class="price-value">₺29,90</div>
-                    </div>
-                    <div class="price-card featured" onclick="buyItem('SILVER')">
-                        <div class="featured-tag">EN POPÜLER</div>
-                        <div class="price-info">
-                            <h4>Gümüş Paket</h4>
-                            <p>+250 Çevirme Hakkı</p>
-                        </div>
-                        <div class="price-value">₺79,90</div>
-                    </div>
-                    <div class="price-card" onclick="buyItem('UNLIMITED')" style="border-color: var(--accent);">
-                        <div class="price-info">
-                            <h4 style="color:var(--accent)">Altın Paket</h4>
-                            <p>Sınırsız Kullanım</p>
-                        </div>
-                        <div class="price-value" style="color:var(--accent)">₺149,90</div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('modalOverlay').style.display = 'flex';
+        function showRes(v) { document.getElementById('resText').innerText = v; document.getElementById('modal').style.display = 'flex'; setTimeout(() => document.getElementById('modal').classList.add('active'), 10); }
+        function closeM() { document.getElementById('modal').classList.remove('active'); setTimeout(() => document.getElementById('modal').style.display = 'none', 300); }
+        function addOpt() { const i = document.getElementById('optIn'); if(i.value.trim()) { opts.push(i.value.trim()); i.value = ''; updateUI(); draw(); } }
+        function remOpt(i) { opts.splice(i, 1); updateUI(); draw(); }
+        function loadPack(p) {
+            const packs = { food: ["Kebap", "Pizza", "Sushi", "Ev Yemeği", "Salata", "Burger"], movie: ["Aksiyon", "Dram", "Komedi", "Korku", "Bilim Kurgu"], game: ["PUBG", "FIFA", "LoL", "Valorant", "Minecraft"], activity: ["Yürüyüş", "Kitap", "Film", "Uyku", "Spor", "Gezi"] };
+            opts = packs[p]; updateUI(); draw();
         }
+        function toggleTheme() { const b = document.body; const t = b.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; b.setAttribute('data-theme', t); draw(); }
 
-        function buyItem(tier) {
-            const content = document.getElementById('modalContent');
-            content.innerHTML = `<h3>⌛ İşlem Yapılıyor...</h3>`;
-            setTimeout(() => {
-                if (tier === 'BRONZE') extraSpins += 50;
-                else if (tier === 'SILVER') extraSpins += 250;
-                else if (tier === 'UNLIMITED') isUnlimited = true;
-                updateUI();
-                content.innerHTML = `<h2 style="color:var(--success)">Başarılı!</h2><p>İşleminiz tamamlandı.</p><br><button class="spin-btn" onclick="closeModal()">TAMAM</button>`;
-                triggerConfetti();
-            }, 1000);
-        }
-
-        function addOption() {
-            const input = document.getElementById('optionInput');
-            const v = input.value.trim();
-            if (v) { 
-                options.push(v); 
-                input.value = ''; 
-                activePackId = null; 
-                updateUI(); 
-                drawWheel(); 
-            }
-        }
-
-        function removeOption(i) { 
-            options.splice(i, 1); 
-            activePackId = null; 
-            updateUI(); 
-            drawWheel(); 
-        }
-
-        function editOption(i) {
-            const currentText = options[i];
-            const newText = prompt("Seçeneği düzenle:", currentText);
-            if (newText !== null && newText.trim() !== "") {
-                options[i] = newText.trim();
-                activePackId = null;
-                updateUI();
-                drawWheel();
-            }
-        }
-
-        function renderOptionsList() {
-            const list = document.getElementById('optionsList');
-            list.innerHTML = '';
-            options.forEach((o, i) => {
-                const item = document.createElement('div');
-                item.className = 'option-item';
-                item.innerHTML = `
-                    <div class="option-text">${o}</div>
-                    <div class="option-actions">
-                        <span class="btn-icon btn-edit" onclick="editOption(${i})">✎</span>
-                        <span class="btn-icon btn-delete" onclick="removeOption(${i})">🗑</span>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function drawWheel() {
-            const size = canvas.width;
-            const center = size / 2;
-            const radius = center - 15;
-            const arc = (2 * Math.PI) / (options.length || 1);
-            ctx.clearRect(0,0,size,size);
-            options.forEach((txt, i) => {
-                const ang = currentAngle + i * arc;
-                ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, radius, ang, ang + arc);
-                ctx.fillStyle = colors[i % colors.length]; ctx.fill();
-                ctx.strokeStyle = document.body.getAttribute('data-theme') === 'dark' ? '#1e293b' : 'white';
-                ctx.lineWidth = 4; ctx.stroke();
-                ctx.save(); ctx.translate(center, center); ctx.rotate(ang + arc / 2);
-                ctx.textAlign = 'right'; ctx.fillStyle = 'white'; ctx.font = 'bold 24px sans-serif';
-                ctx.fillText(txt.substring(0, 12), radius - 30, 10); ctx.restore();
-            });
-        }
-
-        function toggleTheme() {
-            const b = document.body;
-            const t = b.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-            b.setAttribute('data-theme', t);
-            document.getElementById('themeIcon').innerText = t === 'light' ? '🌙' : '☀️';
-            drawWheel();
-        }
-
-        function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
-        function showSimpleModal(t, s) { 
-            const content = document.getElementById('modalContent');
-            content.innerHTML = `<h2>${t}</h2><p>${s}</p><br><button class="spin-btn" onclick="closeModal()">TAMAM</button>`;
-            document.getElementById('modalOverlay').style.display = 'flex'; 
-        }
-        function showResult(v) { 
-            const content = document.getElementById('modalContent');
-            content.innerHTML = `<h2>Günün Kararı!</h2><div class="result-val">${v}</div><button class="spin-btn" onclick="closeModal()">HARİKA!</button>`;
-            document.getElementById('modalOverlay').style.display = 'flex'; 
-        }
-
-        const confCanvas = document.getElementById('confettiCanvas');
-        const cctx = confCanvas.getContext('2d');
-        let parts = [];
+        // --- KONFETİ ---
+        const cC = document.getElementById('confettiCanvas'); const ccx = cC.getContext('2d');
+        let particles = [];
         function triggerConfetti() {
-            confCanvas.width = window.innerWidth; confCanvas.height = window.innerHeight;
-            parts = Array.from({length:60}, () => ({
-                x: Math.random()*confCanvas.width, y: -20, s: Math.random()*8+4,
-                c: colors[Math.floor(Math.random()*colors.length)], v: Math.random()*4+2, r: Math.random()*360
-            }));
+            cC.width = window.innerWidth; cC.height = window.innerHeight;
+            particles = Array.from({length: 80}, () => ({ x: Math.random() * cC.width, y: -20, s: Math.random() * 8 + 4, c: colors[Math.floor(Math.random() * colors.length)], v: Math.random() * 5 + 3, r: Math.random() * 360 }));
             updateConf();
         }
         function updateConf() {
-            cctx.clearRect(0,0,confCanvas.width, confCanvas.height);
-            parts.forEach((p, i) => {
-                p.y += p.v; p.r += 2;
-                cctx.save(); cctx.translate(p.x, p.y); cctx.rotate(p.r*Math.PI/180);
-                cctx.fillStyle = p.c; cctx.fillRect(-p.s/2, -p.s/2, p.s, p.s); cctx.restore();
-                if(p.y > confCanvas.height) parts.splice(i,1);
-            });
-            if(parts.length > 0) requestAnimationFrame(updateConf);
+            ccx.clearRect(0,0,cC.width,cC.height);
+            particles.forEach((p, i) => { p.y += p.v; p.r += 4; ccx.save(); ccx.translate(p.x, p.y); ccx.rotate(p.r * Math.PI / 180); ccx.fillStyle = p.c; ccx.fillRect(-p.s/2, -p.s/2, p.s, p.s); ccx.restore(); if(p.y > cC.height) particles.splice(i, 1); });
+            if(particles.length > 0) requestAnimationFrame(updateConf);
         }
     </script>
 </body>
