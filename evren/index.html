@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gözlemlenebilir Evren</title>
+<style>
+:root{
+  --bg:#03040a; --panel:rgba(8,14,26,.78); --line:rgba(80,230,230,.22);
+  --cyan:#4ff0e6; --violet:#a98bff; --text:#e8f1f7; --dim:#8ca0b3;
+  --ok:#5be38f; --warn:#f2c94c; --rep:#c58bff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans",sans-serif;font-size:14px}
+#c{position:fixed;inset:0;display:block;touch-action:none}
+button{font:inherit;color:var(--text);background:rgba(79,240,230,.08);border:1px solid var(--line);
+  border-radius:8px;padding:6px 10px;cursor:pointer;transition:.2s}
+button:hover{background:rgba(79,240,230,.18);border-color:var(--cyan)}
+button.on{background:rgba(169,139,255,.25);border-color:var(--violet)}
+.panel{position:fixed;background:var(--panel);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line);border-radius:12px;z-index:5}
+#top{top:10px;left:50%;transform:translateX(-50%);display:flex;gap:6px;align-items:center;padding:6px;
+  width:min(760px,calc(100% - 20px));flex-wrap:wrap}
+#top .brand{font-weight:600;letter-spacing:.08em;color:var(--cyan);font-size:12px;padding:0 6px;white-space:nowrap}
+#searchWrap{position:relative;flex:1;min-width:140px}
+#search{width:100%;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 10px;font:inherit}
+#results{position:absolute;top:110%;left:0;right:0;max-height:300px;overflow:auto;display:none}
+#results div{padding:7px 10px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04)}
+#results div:hover,#results div.act{background:rgba(79,240,230,.15)}
+#results small{color:var(--dim)}
+#left{top:64px;left:10px;width:250px;bottom:96px;padding:10px;overflow:auto}
+#left h3,#right h3{margin:2px 0 8px;font-size:11px;letter-spacing:.14em;color:var(--dim);font-weight:600}
+.tl{padding:6px 8px;border-radius:7px;cursor:pointer;border-left:2px solid transparent;margin:1px 0}
+.tl:hover{background:rgba(79,240,230,.1)}
+.tl.cur{border-left-color:var(--cyan);background:rgba(79,240,230,.12);color:var(--cyan)}
+.tc{padding:3px 8px 3px 22px;cursor:pointer;color:var(--dim);font-size:13px;border-radius:6px}
+.tc:hover{color:var(--text);background:rgba(169,139,255,.12)}
+.tc.sel{color:var(--violet)}
+#right{top:64px;right:10px;width:330px;bottom:96px;padding:14px;overflow:auto;display:none}
+#right .name{font-size:20px;font-weight:600;margin:0 0 2px}
+#right .type{color:var(--cyan);font-size:13px;margin-bottom:10px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid;margin-bottom:10px}
+.b-G{color:var(--ok);border-color:var(--ok)} .b-M{color:var(--warn);border-color:var(--warn)} .b-T{color:var(--rep);border-color:var(--rep)}
+.row{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.row b{flex:0 0 112px;color:var(--dim);font-weight:500;font-size:12px}
+.row span{flex:1;font-size:13px}
+.na{color:#5f6f80;font-style:italic}
+.feat{margin:10px 0 0;padding-left:18px;font-size:13px;line-height:1.5}
+.note{margin-top:10px;font-size:12px;color:#d9c7ff;background:rgba(169,139,255,.1);border:1px solid rgba(169,139,255,.3);padding:8px;border-radius:8px}
+.src{margin-top:10px;font-size:12px;color:var(--dim)}
+#right .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+#closeR{position:absolute;top:8px;right:8px;padding:2px 8px}
+#bottom{left:10px;right:10px;bottom:10px;padding:8px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#crumbs{font-size:13px;color:var(--dim)} #crumbs a{color:var(--cyan);cursor:pointer;text-decoration:none}
+#dist{font-variant-numeric:tabular-nums;font-size:13px;margin-left:auto;text-align:right}
+#dist small{color:var(--dim)}
+#sim{display:none;gap:6px;align-items:center;flex-wrap:wrap}
+#sim select{background:#0b1322;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:5px}
+#simDate{font-variant-numeric:tabular-nums;color:var(--cyan);font-size:13px;min-width:92px}
+#scaleNote{position:fixed;left:50%;transform:translateX(-50%);top:62px;max-width:min(640px,calc(100% - 560px));min-width:260px;
+  font-size:12px;padding:7px 12px;color:#ffe6a6;background:rgba(40,30,8,.7);border:1px solid rgba(242,201,76,.35);border-radius:10px;z-index:4;text-align:center}
+#labels{position:fixed;inset:0;pointer-events:none;z-index:3;overflow:hidden}
+.lab{position:absolute;transform:translate(10px,-50%);font-size:12px;color:#cfe;white-space:nowrap;pointer-events:auto;cursor:pointer;
+  text-shadow:0 0 4px #000,0 0 8px #000;padding:1px 4px;border-radius:4px;user-select:none}
+.lab::before{content:"";position:absolute;left:-9px;top:50%;width:5px;height:5px;margin-top:-3px;border:1px solid var(--cyan);border-radius:50%}
+.lab.sel{color:var(--violet);background:rgba(169,139,255,.15)}
+.lab.drill::after{content:" ⤵";color:var(--cyan)}
+#fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .45s;z-index:6}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:20;display:none;align-items:center;justify-content:center;padding:16px}
+.modal .box{background:#081120;border:1px solid var(--line);border-radius:14px;max-width:880px;width:100%;max-height:90vh;overflow:auto;padding:18px;position:relative}
+.modal h2{margin:0 0 10px;color:var(--cyan);font-weight:500}
+.modal .x{position:absolute;top:10px;right:10px}
+#eras{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px}
+#eras button{flex:0 0 auto;font-size:12px}
+#eraView{display:flex;gap:14px;margin-top:12px;flex-wrap:wrap}
+#eraCanvas{width:300px;height:220px;border-radius:10px;border:1px solid var(--line);background:#000;flex:0 0 auto;max-width:100%}
+#eraText{flex:1;min-width:240px;line-height:1.55}
+#eraText .age{color:var(--violet);font-weight:600}
+.modal li{margin:4px 0;line-height:1.45}
+.modal a{color:var(--cyan)}
+#err{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:50;background:#03040a;padding:24px;text-align:center}
+#err div{max-width:520px;line-height:1.6}
+#loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:40;background:#03040a;color:var(--cyan);letter-spacing:.2em;font-size:13px;transition:opacity .6s}
+.mobBtn{display:none}
+#hint{font-size:11px;color:var(--dim)}
+@media (max-width:820px){
+  #left{display:none;bottom:auto;max-height:60vh;width:min(280px,calc(100% - 20px))}
+  #left.open{display:block}
+  #right{left:10px;right:10px;width:auto;top:auto;bottom:118px;max-height:46vh}
+  .mobBtn{display:inline-block}
+  #scaleNote{top:auto;bottom:118px;max-width:calc(100% - 20px);font-size:11px}
+  body.rOpen #scaleNote{display:none}
+  #top .brand{display:none}
+  #hint{display:none}
+  #dist{margin-left:0;text-align:left;width:100%}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="labels"></div>
+<div id="fade"></div>
+<div id="loading">EVREN YÜKLENİYOR…</div>
+<div id="err"><div id="errMsg"></div></div>
+
+<div id="top" class="panel">
+  <button class="mobBtn" id="btnTree" title="Keşif ağacı">☰</button>
+  <span class="brand">COSMIC INFINITY</span>
+  <div id="searchWrap"><input id="search" placeholder="Gök cismi ara… (örn. Andromeda, Mars, Ay)" autocomplete="off"><div id="results" class="panel"></div></div>
+  <button id="btnBack" title="Önceki ölçeğe dön">↩ Geri</button>
+  <button id="btnUp" title="Bir üst kozmik ölçek">⤴</button>
+  <button id="btnHome" title="Başlangıç konumu">⌂</button>
+  <button id="btnTour" title="Otomatik keşif">▶ Tur</button>
+  <button id="btnTime" title="Kozmolojik zaman çizelgesi">⏳</button>
+  <button id="btnInfo" title="Kaynaklar ve açıklamalar">ⓘ</button>
+  <button id="btnFull" title="Tam ekran">⛶</button>
+</div>
+
+<div id="left" class="panel"><h3>KEŞİF AĞACI</h3><div id="tree"></div>
+  <h3 style="margin-top:14px">GÖRÜNTÜ</h3>
+  <label style="display:block;margin:4px 0"><input type="checkbox" id="chkLabels" checked> Etiketler</label>
+  <label style="display:block;margin:4px 0"><input type="checkbox" id="chkOrbits" checked> Yörüngeler</label>
+  <label style="display:block;margin:4px 0">Kalite
+    <select id="selQ" style="background:#0b1322;color:var(--text);border:1px solid var(--line);border-radius:6px"><option value="0.35">Düşük</option><option value="0.7">Orta</option><option value="1">Yüksek</option></select></label>
+  <div id="fps" style="font-size:11px;color:var(--dim);margin-top:6px"></div>
+</div>
+
+<div id="right" class="panel"><button id="closeR">✕</button><div id="info"></div></div>
+<div id="scaleNote"></div>
+
+<div id="bottom" class="panel">
+  <div id="crumbs"></div>
+  <div id="sim">
+    <button id="btnPause">❚❚</button>
+    <select id="selSpeed">
+      <option value="0.0000115741">Gerçek zaman</option><option value="0.0416667">1 saat/sn</option>
+      <option value="1" selected>1 gün/sn</option><option value="7">1 hafta/sn</option>
+      <option value="30.4375">1 ay/sn</option><option value="365.25">1 yıl/sn</option><option value="3652.5">10 yıl/sn</option>
+    </select>
+    <button id="btnNow" title="Bugünün tarihine dön">Bugün</button>
+    <span id="simDate"></span>
+    <button data-go="sun">☉ Güneş</button><button data-go="earth">⊕ Dünya</button><button data-go="moon">☾ Ay</button>
+  </div>
+  <span id="hint">Sürükle: döndür · Kaydır/iki parmak: yakınlaş · Sağ tık/iki parmak sürükle: kaydır · Çift tık: içine in</span>
+  <div id="dist"></div>
+</div>
+
+<div class="modal" id="mTime"><div class="box"><button class="x" data-close>✕</button>
+  <h2>Kozmolojik Zaman Çizelgesi</h2>
+  <p style="color:var(--dim);margin-top:0;font-size:13px">Büyük Patlama, uzayda bir noktadaki patlama değildir; uzayın <b>her yerde aynı anda</b> genişlemeye başlamasıdır. Aşağıdaki görseller temsilidir.</p>
+  <div id="eras"></div>
+  <div id="eraView"><canvas id="eraCanvas" width="600" height="440"></canvas><div id="eraText"></div></div>
+</div></div>
+
+<div class="modal" id="mInfo"><div class="box"><button class="x" data-close>✕</button>
+  <h2>Kaynaklar, Ölçekler ve Açıklamalar</h2>
+  <h3>Veri türleri</h3>
+  <ul>
+    <li><span class="badge b-G">Gözlemsel veri</span> NASA, ESA, IAU gibi kaynaklarla desteklenen ölçülmüş değerler.</li>
+    <li><span class="badge b-M">Model / yaklaşık</span> Kozmolojik modellere (ΛCDM, Planck 2018) dayalı çıkarımsal değerler, yaklaşık yönler.</li>
+    <li><span class="badge b-T">Temsili görsel</span> Görselleştirme için prosedürel olarak üretilmiş içerik (ör. kozmik ağdaki iplikçik konumları, galaksilerdeki tek tek yıldızlar, Dünya yüzey dokusu).</li>
+  </ul>
+  <h3>Uzaklık kavramları</h3>
+  <ul>
+    <li><b>Işığın yolculuk süresi (bakış-geri zamanı):</b> Işığın kaynaktan bize gelirken geçirdiği süre. En fazla ≈ 13,8 milyar yıl.</li>
+    <li><b>Bugünkü uygun (comoving / proper) uzaklık:</b> Evren genişlediği için ışığı yayan cisim bugün çok daha uzaktadır. Gözlemlenebilir evrenin yarıçapı ≈ 46,5 milyar ışık yılıdır (çap ≈ 93 milyar ışık yılı).</li>
+    <li><b>Kırmızıya kayma (z):</b> Genişleme ışığın dalga boyunu uzatır. z = 1100 olan KMA ışığı yayıldığından beri evren ≈ 1100 kat genişlemiştir.</li>
+    <li><b>Gözlemlenebilir evrenin sınırı</b> fiziksel bir duvar değildir; ışığın bize ulaşabildiği bölgenin ufkudur. Her gözlemci kendi gözlemlenebilir evreninin merkezindedir.</li>
+  </ul>
+  <h3>Ölçek sistemi</h3>
+  <p>Uygulama hiyerarşik seviyeler kullanır. Evren, Laniakea, Yerel Grup, Samanyolu, Andromeda ve Dünya–Ay seviyeleri <b>doğrusal</b> ölçektedir. Güneş Sistemi seviyesi <b>sıkıştırılmış</b> görsel ölçek kullanır; gerçek değerler bilgi panelinde korunur.</p>
+  <h3>Kaynaklar</h3>
+  <ul>
+    <li>NASA Planetary Fact Sheet — nssdc.gsfc.nasa.gov/planetary/factsheet</li>
+    <li>NASA Solar System Exploration — science.nasa.gov/solar-system</li>
+    <li>Planck Collaboration (2018), Cosmological Parameters (A&amp;A 641, A6)</li>
+    <li>ESA Planck &amp; Gaia görev sayfaları — esa.int</li>
+    <li>GRAVITY Collaboration (2019–2021), Sgr A* kütle ve uzaklık ölçümleri</li>
+    <li>Tully, Courtois, Hoffman &amp; Pomarède (2014), “The Laniakea supercluster of galaxies”, Nature 513</li>
+    <li>SDSS, 2dFGRS galaksi taramaları; Millennium Simülasyonu (kozmik ağ yapısı)</li>
+    <li>Oesch vd. (2016); Bunker vd. (2023) — GN-z11</li>
+    <li>JPL “Approximate Positions of the Planets” (ortalama boylamlar, J2000)</li>
+  </ul>
+  <h3>Kısıtlar</h3>
+  <ul>
+    <li>Three.js kütüphanesi CDN (jsDelivr) üzerinden yüklenir; <b>internet bağlantısı yoksa</b> uygulama açılamaz ve bir hata mesajı gösterir. Uygulama başka hiçbir harici servise, API anahtarına veya hesaba ihtiyaç duymaz; tüm bilimsel veriler dosyanın içindedir.</li>
+    <li>Gezegen konumları dairesel yörünge ve ortalama boylam ile <b>yaklaşık</b> hesaplanır (birkaç derece hata olabilir).</li>
+    <li>Kozmik ağ ve galaksi kümelerinin yönleri temsilidir; uzaklıkları gerçek değerlere dayanır.</li>
+  </ul>
+</div></div>
+
+<script>
+// CDN/modül hatalarını yakalamak için (modül yüklenemezse)
+window.__showErr = function(m){var e=document.getElementById('err');document.getElementById('errMsg').innerHTML=m;e.style.display='flex';document.getElementById('loading').style.display='none';};
+setTimeout(function(){ if(!window.__appStarted) window.__showErr('<h2 style="color:#4ff0e6">Uygulama başlatılamadı</h2><p>3B grafik kütüphanesi (Three.js) CDN üzerinden yüklenemedi. Lütfen internet bağlantınızı kontrol edip sayfayı yenileyin.</p><p style="color:#8ca0b3;font-size:13px">Bu uygulama Three.js’i jsDelivr CDN’den yükler. Çevrimdışı kullanım için three.module.js ve OrbitControls.js dosyalarını yerel olarak indirip importmap adreslerini güncelleyebilirsiniz.</p>'); }, 15000);
+(function(){ try{ var c=document.createElement('canvas'); if(!(window.WebGLRenderingContext && (c.getContext('webgl2')||c.getContext('webgl')))) throw 0; }catch(e){ window.__noWebGL=true; window.__appStarted=true;
+  window.__showErr('<h2 style="color:#4ff0e6">WebGL desteklenmiyor</h2><p>Tarayıcınız veya grafik sürücünüz WebGL’i desteklemiyor ya da devre dışı bırakmış. Güncel bir Chrome, Firefox, Edge veya Safari sürümü deneyin; donanım hızlandırmanın açık olduğundan emin olun.</p>'); } })();
+</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+if (window.__noWebGL) throw new Error('no webgl');
+window.__appStarted = true;
+
+/* =========================================================
+   1) BİLİMSEL VERİ (gerçek / model) — görsellerden ayrı tutulur
+   guven: G = gözlemsel, M = model/yaklaşık, T = temsili
+   ========================================================= */
+const DATA = {
+  universe:{ad:'Gözlemlenebilir Evren',tur:'Kozmolojik ufuk bölgesi',boyut:'Yarıçap ≈ 46,5 milyar ışık yılı; çap ≈ 93 milyar ışık yılı (bugünkü uygun uzaklık)',uzaklik:'Gözlemci (biz) merkezdedir',yas:'≈ 13,8 milyar yıl (13,787 ± 0,020; Planck 2018)',sicaklik:'Kozmik arka plan ışınımı: 2,725 K',kutle:'Sıradan madde ≈ 1,5×10⁵³ kg mertebesi (model)',isikYili:'Yarıçap ≈ 46,5 milyar ışık yılı',isikSuresi:'En eski ışık ≈ 13,8 milyar yıl yol aldı',
+    ozellik:['Sınır fiziksel bir duvar değildir; ışığın bize ulaşabildiği bölgedir.','Işık 13,8 milyar yıl yol almasına rağmen yarıçap 46,5 milyar ışık yılıdır; çünkü uzay bu sürede genişlemiştir.','Evrenin tamamı gözlemlenebilir kısmından çok daha büyük, hatta sonsuz olabilir (bilinmiyor).','İçerik: ≈ %5 sıradan madde, ≈ %27 karanlık madde, ≈ %68 karanlık enerji.'],kaynak:'Planck Collaboration 2018; NASA WMAP',guven:'M'},
+  cmb:{ad:'Kozmik Mikrodalga Arka Planı (KMA)',tur:'Kalıntı ışınım',boyut:'Tüm gökyüzünü kaplar',uzaklik:'Yayıldığı madde bugün ≈ 45,7 milyar ışık yılı uzakta',yas:'Büyük Patlama’dan ≈ 380.000 yıl sonra yayıldı',sicaklik:'2,72548 K (sıcaklık dalgalanmaları ≈ 1/100.000)',kutle:null,isikYili:'≈ 45,7 milyar ışık yılı (bugünkü uygun uzaklık)',isikSuresi:'≈ 13,8 milyar yıl',
+    ozellik:['Kırmızıya kayma z ≈ 1100.','Evren saydamlaşınca (rekombinasyon) serbest kalan ışık.','Sahnedeki küre bir sınır duvarı DEĞİL, son saçılma yüzeyinin temsilidir.','Desen temsilidir; gerçek Planck haritası değildir.'],kaynak:'ESA Planck; NASA COBE/WMAP',guven:'G',gorsel:'Küre üzerindeki renk deseni prosedüreldir.'},
+  web:{ad:'Kozmik Ağ',tur:'Büyük ölçekli yapı',boyut:'İplikçikler onlarca–yüzlerce milyon ışık yılı; boşluklar ≈ 30–300+ milyon ışık yılı',uzaklik:'Her yönde',yas:'Erken evrendeki yoğunluk dalgalanmalarından milyarlarca yılda büyüdü',sicaklik:'İplikçiklerdeki sıcak gaz (WHIM) ≈ 10⁵–10⁷ K',kutle:'Madde dağılımına karanlık madde hâkimdir',isikYili:null,isikSuresi:null,
+    ozellik:['Galaksiler iplikçikler ve düğümlerde toplanır; hacmin çoğu boşluklardır.','Düğümlerde galaksi kümeleri ve süperkümeler oluşur.','Yapı SDSS gibi taramalarla gözlenmiş, simülasyonlarla doğrulanmıştır.'],kaynak:'SDSS; 2dFGRS; Millennium Simülasyonu',guven:'M',gorsel:'Bu sahnedeki iplikçik, düğüm ve boşluk konumları PROSEDÜREL üretilmiştir; gerçek gökyüzü haritası değildir.'},
+  node:{ad:'Süperküme Düğümü (temsili)',tur:'Kozmik ağ düğümü',boyut:'Tipik süperküme ≈ 100–500 milyon ışık yılı',uzaklik:null,yas:null,sicaklik:null,kutle:'≈ 10¹⁵–10¹⁷ Güneş kütlesi mertebesi',isikYili:null,isikSuresi:null,ozellik:['İplikçiklerin kesiştiği yoğun bölgeler.'],kaynak:'Genel kozmoloji literatürü',guven:'T',gorsel:'Konum temsilidir; gerçek bir nesneye karşılık gelmez.'},
+  sloan:{ad:'Sloan Büyük Duvarı',tur:'Galaksi duvarı (süperkümeler zinciri)',boyut:'Uzunluk ≈ 1,37 milyar ışık yılı',uzaklik:'≈ 1 milyar ışık yılı',yas:null,sicaklik:null,kutle:null,isikYili:'≈ 1 milyar ışık yılı',isikSuresi:'≈ 1 milyar yıl mertebesi',ozellik:['2003’te SDSS verileriyle keşfedildi (Gott vd.).'],kaynak:'Gott vd. 2005, ApJ',guven:'M',gorsel:'Gökyüzündeki yönü temsilidir.'},
+  bootes:{ad:'Çoban (Boötes) Boşluğu',tur:'Kozmik boşluk',boyut:'Çap ≈ 330 milyon ışık yılı',uzaklik:'Merkezi ≈ 700 milyon ışık yılı',yas:null,sicaklik:null,kutle:'Çok düşük galaksi yoğunluğu (≈ 60 bilinen galaksi)',isikYili:'≈ 700 milyon ışık yılı',isikSuresi:'≈ 700 milyon yıl mertebesi',ozellik:['Bilinen en büyük boşluklardan biri; 1981’de keşfedildi.'],kaynak:'Kirshner vd. 1981',guven:'M',gorsel:'Yönü temsilidir.'},
+  gnz11:{ad:'GN-z11',tur:'Çok uzak erken galaksi',boyut:'Samanyolu’ndan ≈ 25 kat küçük',uzaklik:'Bugünkü uygun uzaklık ≈ 32 milyar ışık yılı',yas:'Gördüğümüz ışık Büyük Patlama’dan ≈ 430 milyon yıl sonrasından',sicaklik:null,kutle:'≈ 1 milyar Güneş kütlesi yıldız (tahmini)',isikYili:'≈ 32 milyar ışık yılı (uygun uzaklık)',isikSuresi:'≈ 13,4 milyar yıl',
+    ozellik:['Kırmızıya kayma z ≈ 10,6 (JWST spektroskopisi).','Işık 13,4 milyar yıl yol aldı ama galaksi bugün 32 milyar ışık yılı uzakta: fark evrenin genişlemesinden gelir.','Bugün bu galaksiyi gördüğümüz hâliyle değil, gençlik hâliyle görüyoruz.'],kaynak:'Oesch vd. 2016; Bunker vd. 2023 (JWST)',guven:'M',gorsel:'Gökyüzündeki yönü temsilidir.'},
+  laniakea:{ad:'Laniakea Süperkümesi',tur:'Süperküme (evimiz)',boyut:'Çap ≈ 520 milyon ışık yılı',uzaklik:'Samanyolu bu yapının içinde, kenarına yakın',yas:null,sicaklik:null,kutle:'≈ 10¹⁷ Güneş kütlesi',isikYili:'Çap ≈ 520 milyon ışık yılı',isikSuresi:null,ozellik:['≈ 100.000 galaksi içerir.','Galaksi hızlarının akış haritasıyla tanımlandı; adı Hawaiice “ölçülemez cennet” demektir.','Galaksilerin özel hareketleri Büyük Çekici bölgesine doğru akar.'],kaynak:'Tully vd. 2014, Nature 513',guven:'M'},
+  virgo:{ad:'Başak (Virgo) Kümesi',tur:'Galaksi kümesi',boyut:'Çap ≈ 15 milyon ışık yılı',uzaklik:'≈ 54 milyon ışık yılı',yas:null,sicaklik:'Küme içi gaz ≈ 10⁷–10⁸ K (X-ışını)',kutle:'≈ 1,2×10¹⁵ Güneş kütlesi',isikYili:'≈ 54 milyon ışık yılı',isikSuresi:'≈ 54 milyon yıl',ozellik:['1.300–2.000 galaksi içerir.','Merkezinde dev eliptik M87 ve ünlü kara deliği bulunur (EHT 2019).'],kaynak:'NASA/ESA; Mei vd. 2007',guven:'G'},
+  m87:{ad:'M87 (Virgo A)',tur:'Dev eliptik galaksi (E0)',boyut:'Çap ≈ 120.000 ışık yılı (ana bölge)',uzaklik:'≈ 53,5 milyon ışık yılı',yas:null,sicaklik:null,kutle:'Merkez kara delik ≈ 6,5 milyar Güneş kütlesi',isikYili:'≈ 53,5 milyon ışık yılı',isikSuresi:'≈ 53,5 milyon yıl',ozellik:['Kara deliğinin ilk görüntüsü 2019’da Olay Ufku Teleskobu ile elde edildi.','≈ 5.000 ışık yılı uzunluğunda relativistik jet.'],kaynak:'EHT Collaboration 2019',guven:'G'},
+  ga:{ad:'Büyük Çekici (Norma Kümesi bölgesi)',tur:'Kütle çekim anomalisi / süperküme merkezi',boyut:null,uzaklik:'≈ 150–250 milyon ışık yılı',yas:null,sicaklik:null,kutle:'≈ 10¹⁶ Güneş kütlesi mertebesi (tahmini)',isikYili:'≈ 220 milyon ışık yılı (Norma Kümesi)',isikSuresi:null,ozellik:['Samanyolu düzleminin arkasında kaldığı için gözlemi zordur (“kaçınma bölgesi”).','Laniakea’nın kütle çekim merkezine yakındır.'],kaynak:'Lynden-Bell vd. 1988; Kraan-Korteweg',guven:'M'},
+  fornax:{ad:'Fırın (Fornax) Kümesi',tur:'Galaksi kümesi',boyut:null,uzaklik:'≈ 62 milyon ışık yılı',yas:null,sicaklik:null,kutle:'≈ 7×10¹³ Güneş kütlesi',isikYili:'≈ 62 milyon ışık yılı',isikSuresi:'≈ 62 milyon yıl',ozellik:['≈ 58 büyük galaksi; merkezde NGC 1399.'],kaynak:'NASA/ESA',guven:'G'},
+  coma:{ad:'Saç (Coma) Kümesi',tur:'Zengin galaksi kümesi (Laniakea dışında)',boyut:'Çap ≈ 20 milyon ışık yılı',uzaklik:'≈ 320 milyon ışık yılı',yas:null,sicaklik:'Küme içi gaz ≈ 10⁸ K',kutle:'≈ 10¹⁵ Güneş kütlesi',isikYili:'≈ 320 milyon ışık yılı',isikSuresi:'≈ 320 milyon yıl',ozellik:['1.000’den fazla galaksi; çoğu eliptik.','Fritz Zwicky karanlık madde fikrini 1933’te bu kümeden çıkardı.'],kaynak:'Zwicky 1933; NASA',guven:'G'},
+  perseus:{ad:'Kahraman–Balık (Perseus–Pisces) Süperkümesi',tur:'Süperküme',boyut:'Uzunluk ≈ 300+ milyon ışık yılı',uzaklik:'≈ 250 milyon ışık yılı',yas:null,sicaklik:null,kutle:null,isikYili:'≈ 250 milyon ışık yılı',isikSuresi:null,ozellik:['Yakın evrendeki en belirgin iplikçik yapılarından biri.'],kaynak:'Haynes & Giovanelli 1986',guven:'M'},
+  localgroup:{ad:'Yerel Grup',tur:'Galaksi grubu',boyut:'Çap ≈ 10 milyon ışık yılı',uzaklik:'Samanyolu içinde',yas:null,sicaklik:null,kutle:'≈ 2–3×10¹² Güneş kütlesi',isikYili:null,isikSuresi:null,ozellik:['80’den fazla üye; çoğu cüce galaksi.','En büyük iki üyesi Andromeda ve Samanyolu.'],kaynak:'McConnachie 2012',guven:'G'},
+  milkyway:{ad:'Samanyolu',tur:'Çubuklu sarmal galaksi (SBbc)',boyut:'Disk çapı ≈ 100.000 ışık yılı mertebesi',uzaklik:'İçindeyiz; merkeze ≈ 26.000 ışık yılı',yas:'En yaşlı yıldızlar ≈ 13,6 milyar yıl',sicaklik:null,kutle:'≈ 1–1,5×10¹² Güneş kütlesi (karanlık madde dahil)',isikYili:'Merkeze ≈ 26.000 ışık yılı',isikSuresi:'Merkezden ışık ≈ 26.000 yıl',
+    ozellik:['100–400 milyar yıldız.','Güneş galaktik merkez çevresinde ≈ 230 milyon yılda bir tur atar (≈ 230 km/s).','Merkezinde Sagittarius A* kara deliği bulunur.','Yaklaşık 4,5 milyar yıl sonra Andromeda ile birleşmesi bekleniyor (2025 çalışmaları bu olasılığı ≈ %50 olarak hesaplıyor).'],kaynak:'NASA; ESA Gaia; GRAVITY Collab.',guven:'G',gorsel:'Yıldız konumları prosedüreldir; kol yapısı modele dayalıdır.'},
+  andromeda:{ad:'Andromeda Galaksisi (M31)',tur:'Sarmal galaksi (SA(s)b)',boyut:'Çap ≈ 220.000 ışık yılı',uzaklik:'≈ 2,5 milyon ışık yılı',yas:'≈ 10 milyar yıl (disk)',sicaklik:null,kutle:'≈ 1–1,5×10¹² Güneş kütlesi',isikYili:'≈ 2,5 milyon ışık yılı',isikSuresi:'≈ 2,5 milyon yıl',ozellik:['≈ 1 trilyon yıldız.','Çıplak gözle görülebilen en uzak cisimlerden biri.','Bize ≈ 110 km/s hızla yaklaşıyor (maviye kayma).'],kaynak:'NASA; ESA',guven:'G',gorsel:'Yıldız dağılımı prosedüreldir.'},
+  m33:{ad:'Üçgen Galaksisi (M33)',tur:'Sarmal galaksi (SA(s)cd)',boyut:'Çap ≈ 60.000 ışık yılı',uzaklik:'≈ 2,73 milyon ışık yılı',yas:null,sicaklik:null,kutle:'≈ 5×10¹⁰ Güneş kütlesi',isikYili:'≈ 2,73 milyon ışık yılı',isikSuresi:'≈ 2,73 milyon yıl',ozellik:['Yerel Grup’un üçüncü büyük üyesi.','Yoğun yıldız oluşumu: dev H II bölgesi NGC 604.'],kaynak:'NASA',guven:'G'},
+  lmc:{ad:'Büyük Macellan Bulutu',tur:'Düzensiz / Macellan tipi cüce galaksi (SB(s)m)',boyut:'Çap ≈ 32.000 ışık yılı',uzaklik:'≈ 160.000 ışık yılı (50 kpc)',yas:null,sicaklik:null,kutle:'≈ 1–2×10¹¹ Güneş kütlesi (karanlık madde dahil)',isikYili:'≈ 160.000 ışık yılı',isikSuresi:'≈ 160.000 yıl',ozellik:['Güney yarımküreden çıplak gözle görülür.','Tarantula Bulutsusu: yerel gruptaki en aktif yıldız oluşum bölgesi.','SN 1987A süpernovası burada patladı.'],kaynak:'Pietrzyński vd. 2019; NASA',guven:'G'},
+  smc:{ad:'Küçük Macellan Bulutu',tur:'Cüce düzensiz galaksi',boyut:'Çap ≈ 19.000 ışık yılı',uzaklik:'≈ 200.000 ışık yılı',yas:null,sicaklik:null,kutle:'≈ 7×10⁹ Güneş kütlesi',isikYili:'≈ 200.000 ışık yılı',isikSuresi:'≈ 200.000 yıl',ozellik:['BMB ile gaz köprüsüyle (Macellan Akıntısı) bağlıdır.'],kaynak:'NASA; Graczyk vd. 2020',guven:'G'},
+  sgra:{ad:'Sagittarius A*',tur:'Süper kütleli kara delik',boyut:'Olay ufku çapı ≈ 24 milyon km (≈ 0,16 AB)',uzaklik:'≈ 26.000 ışık yılı (8,2 kpc)',yas:null,sicaklik:null,kutle:'≈ 4,3 milyon Güneş kütlesi',isikYili:'≈ 26.000 ışık yılı',isikSuresi:'≈ 26.000 yıl',ozellik:['Kütlesi S2 gibi yıldızların yörüngelerinden ölçüldü (2020 Nobel Fizik Ödülü).','İlk görüntüsü 2022’de EHT ile yayımlandı.'],kaynak:'GRAVITY Collab.; EHT 2022',guven:'G'},
+  bar:{ad:'Galaktik Çubuk',tur:'Merkezî yıldız çubuğu',boyut:'Uzunluk ≈ 27.000 ışık yılı (tahmini)',uzaklik:'Merkezde',yas:null,sicaklik:null,kutle:null,isikYili:null,isikSuresi:null,ozellik:['Yaşlı, kırmızımsı yıldızlardan oluşur.','Varlığı Spitzer ve Gaia verileriyle doğrulandı.'],kaynak:'Benjamin vd. 2005 (Spitzer)',guven:'M'},
+  orionarm:{ad:'Orion–Kuğu Kolu',tur:'Küçük sarmal kol (spur)',boyut:'Uzunluk ≈ 10.000+ ışık yılı; genişlik ≈ 3.500 ışık yılı',uzaklik:'Güneş bu kolun içinde',yas:null,sicaklik:null,kutle:null,isikYili:null,isikSuresi:null,ozellik:['Yay (Sagittarius) ve Perseus kolları arasında yer alır.'],kaynak:'Xu vd. 2016',guven:'M'},
+  orionneb:{ad:'Orion Bulutsusu (M42)',tur:'Yayılma bulutsusu / yıldız doğum bölgesi',boyut:'Çap ≈ 24 ışık yılı',uzaklik:'≈ 1.344 ışık yılı',yas:'Merkez yıldızlar ≈ 2 milyon yıl',sicaklik:'İyonize gaz ≈ 10.000 K',kutle:'≈ 2.000 Güneş kütlesi',isikYili:'≈ 1.344 ışık yılı',isikSuresi:'≈ 1.344 yıl',ozellik:['Dünya’ya en yakın büyük yıldız oluşum bölgesi; çıplak gözle görülür.'],kaynak:'NASA/ESA Hubble',guven:'G'},
+  carina:{ad:'Karina Bulutsusu',tur:'Yayılma bulutsusu',boyut:'Çap ≈ 230 ışık yılı',uzaklik:'≈ 8.500 ışık yılı',yas:null,sicaklik:null,kutle:null,isikYili:'≈ 8.500 ışık yılı',isikSuresi:'≈ 8.500 yıl',ozellik:['Eta Carinae dev yıldız sistemini barındırır.','JWST’nin ilk görüntülerinden “Kozmik Uçurumlar” buradadır.'],kaynak:'NASA JWST',guven:'G'},
+  crab:{ad:'Yengeç Bulutsusu (M1)',tur:'Süpernova kalıntısı',boyut:'Çap ≈ 11 ışık yılı',uzaklik:'≈ 6.500 ışık yılı',yas:'1054 yılında gözlenen süpernovadan',sicaklik:null,kutle:null,isikYili:'≈ 6.500 ışık yılı',isikSuresi:'≈ 6.500 yıl',ozellik:['Merkezinde saniyede 30 kez dönen bir pulsar var.'],kaynak:'NASA/ESA',guven:'G'},
+  sun:{ad:'Güneş',tur:'G2V tipi anakol yıldızı',boyut:'Çap 1.392.700 km (109 Dünya)',uzaklik:'Dünya’ya ortalama 149,6 milyon km (1 AB)',yas:'≈ 4,6 milyar yıl',sicaklik:'Yüzey 5.772 K; çekirdek ≈ 15,7 milyon K',kutle:'1,989×10³⁰ kg (333.000 Dünya)',isikYili:'≈ 0,0000158 ışık yılı',isikSuresi:'≈ 8 dakika 20 saniye',ozellik:['Güneş Sistemi kütlesinin %99,86’sı.','Enerjisini çekirdekte hidrojeni helyuma dönüştürerek üretir.'],kaynak:'NASA Sun Fact Sheet',guven:'G'},
+  mercury:{ad:'Merkür',tur:'Kayalık gezegen',boyut:'Çap 4.879 km',uzaklik:'Güneş’e ort. 57,9 milyon km (0,387 AB)',yas:'≈ 4,5 milyar yıl',sicaklik:'−173 °C ile 427 °C arası',kutle:'3,30×10²³ kg (0,055 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 3,2 dakika',ozellik:['Yörünge dönemi 88 gün; bir yıldız günü 58,6 gün.','Atmosferi yok denecek kadar incedir.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  venus:{ad:'Venüs',tur:'Kayalık gezegen',boyut:'Çap 12.104 km',uzaklik:'Güneş’e ort. 108,2 milyon km (0,723 AB)',yas:'≈ 4,5 milyar yıl',sicaklik:'Yüzey ≈ 464 °C',kutle:'4,87×10²⁴ kg (0,815 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 6 dakika',ozellik:['Yoğun CO₂ atmosferi, yüzeyde ≈ 92 bar basınç.','Ters yönde döner; bir gün 243 Dünya günü.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  earth:{ad:'Dünya',tur:'Kayalık gezegen (yaşam barındırdığı bilinen tek yer)',boyut:'Çap 12.742 km',uzaklik:'Güneş’e ort. 149,6 milyon km (1 AB)',yas:'≈ 4,54 milyar yıl',sicaklik:'Ortalama yüzey ≈ 15 °C',kutle:'5,97×10²⁴ kg',isikYili:null,isikSuresi:'Güneş’ten ≈ 8 dakika 20 saniye',ozellik:['Eksen eğikliği 23,44°.','Yüzeyin ≈ %71’i okyanus.','Güneş etrafında ≈ 29,8 km/s hızla döner.'],kaynak:'NASA Earth Fact Sheet',guven:'G',gorsel:'Yüzey dokusu temsilidir; gerçek kıta haritası değildir.'},
+  moon:{ad:'Ay',tur:'Doğal uydu',boyut:'Çap 3.474,8 km',uzaklik:'Dünya’ya ort. 384.400 km',yas:'≈ 4,51 milyar yıl',sicaklik:'−173 °C ile 127 °C arası',kutle:'7,35×10²² kg (0,0123 Dünya)',isikYili:null,isikSuresi:'Dünya’ya ≈ 1,28 saniye',ozellik:['Kütleçekimsel kilitlenme: hep aynı yüzü Dünya’ya döner.','Yörünge dönemi 27,32 gün; evre döngüsü 29,53 gün.','Dünya’dan yılda ≈ 3,8 cm uzaklaşıyor.'],kaynak:'NASA Moon Fact Sheet',guven:'G'},
+  iss:{ad:'Uluslararası Uzay İstasyonu',tur:'Yapay uydu',boyut:'≈ 109 m × 73 m',uzaklik:'Yüzeyden ≈ 400–420 km',yas:'İlk modül 1998',sicaklik:null,kutle:'≈ 420.000 kg',isikYili:null,isikSuresi:'≈ 0,0014 saniye',ozellik:['Dünya çevresini ≈ 92 dakikada dolanır (≈ 7,66 km/s).'],kaynak:'NASA',guven:'G',gorsel:'Yörünge düzlemi basitleştirilmiştir.'},
+  mars:{ad:'Mars',tur:'Kayalık gezegen',boyut:'Çap 6.779 km',uzaklik:'Güneş’e ort. 227,9 milyon km (1,524 AB)',yas:'≈ 4,5 milyar yıl',sicaklik:'Ortalama ≈ −63 °C',kutle:'6,42×10²³ kg (0,107 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 12,7 dakika',ozellik:['Olympus Mons: Güneş Sistemi’nin en büyük volkanı.','İki küçük uydusu var: Phobos ve Deimos.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  ceres:{ad:'Ceres',tur:'Cüce gezegen (asteroit kuşağı)',boyut:'Çap ≈ 939 km',uzaklik:'Güneş’e ort. 2,77 AB',yas:null,sicaklik:'≈ −105 °C',kutle:'9,38×10²⁰ kg',isikYili:null,isikSuresi:'Güneş’ten ≈ 23 dakika',ozellik:['Asteroit kuşağının kütlesinin ≈ üçte biri.','NASA Dawn aracı 2015–2018 arasında inceledi.'],kaynak:'NASA Dawn',guven:'G'},
+  belt:{ad:'Asteroit Kuşağı',tur:'Küçük cisimler kuşağı',boyut:'≈ 2,2–3,3 AB arası',uzaklik:'Mars ile Jüpiter arası',yas:'≈ 4,6 milyar yıl',sicaklik:null,kutle:'Toplam ≈ Ay kütlesinin %3’ü',isikYili:null,isikSuresi:null,ozellik:['Milyonlarca cisim; ancak aralarındaki ortalama uzaklık yüz binlerce km’dir.'],kaynak:'NASA',guven:'G',gorsel:'Parçacık yoğunluğu görsel amaçlıdır; gerçekte kuşak çok seyrektir.'},
+  jupiter:{ad:'Jüpiter',tur:'Gaz devi',boyut:'Ekvator çapı 139.820 km',uzaklik:'Güneş’e ort. 778,5 milyon km (5,20 AB)',yas:'≈ 4,6 milyar yıl',sicaklik:'≈ −110 °C (1 bar seviyesi)',kutle:'1,898×10²⁷ kg (318 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 43 dakika',ozellik:['Büyük Kırmızı Leke: yüzyıllardır süren dev fırtına.','95 bilinen uydu (Io, Europa, Ganymede, Callisto).','Bir gün ≈ 9,9 saat.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  saturn:{ad:'Satürn',tur:'Gaz devi',boyut:'Ekvator çapı 116.460 km',uzaklik:'Güneş’e ort. 1,43 milyar km (9,54 AB)',yas:'≈ 4,6 milyar yıl',sicaklik:'≈ −140 °C (1 bar)',kutle:'5,68×10²⁶ kg (95 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 79 dakika',ozellik:['Halkaları çoğunlukla su buzundan; kalınlığı yer yer yalnızca ≈ 10 m.','Ortalama yoğunluğu sudan düşüktür.','Titan: kalın atmosferli dev uydusu.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  uranus:{ad:'Uranüs',tur:'Buz devi',boyut:'Çap 50.724 km',uzaklik:'Güneş’e ort. 2,87 milyar km (19,2 AB)',yas:'≈ 4,6 milyar yıl',sicaklik:'≈ −195 °C',kutle:'8,68×10²⁵ kg (14,5 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 2,7 saat',ozellik:['Eksen eğikliği ≈ 98°: yan yatmış döner.'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  neptune:{ad:'Neptün',tur:'Buz devi',boyut:'Çap 49.244 km',uzaklik:'Güneş’e ort. 4,50 milyar km (30,1 AB)',yas:'≈ 4,6 milyar yıl',sicaklik:'≈ −200 °C',kutle:'1,02×10²⁶ kg (17 Dünya)',isikYili:null,isikSuresi:'Güneş’ten ≈ 4,2 saat',ozellik:['Güneş Sistemi’nin en hızlı rüzgârları (≈ 2.000 km/sa).','Matematiksel hesapla keşfedilen ilk gezegen (1846).'],kaynak:'NASA Planetary Fact Sheet',guven:'G'},
+  pluto:{ad:'Plüton',tur:'Cüce gezegen (Kuiper Kuşağı)',boyut:'Çap 2.377 km',uzaklik:'Güneş’e ort. 5,9 milyar km (39,5 AB)',yas:null,sicaklik:'≈ −229 °C',kutle:'1,30×10²² kg',isikYili:null,isikSuresi:'Güneş’ten ≈ 5,5 saat',ozellik:['2015’te New Horizons ziyaret etti.','Yörüngesi eliptik ve ≈ 17° eğiktir (burada dairesel çizildi).'],kaynak:'NASA New Horizons',guven:'G'},
+  kuiper:{ad:'Kuiper Kuşağı',tur:'Buzlu küçük cisimler kuşağı',boyut:'≈ 30–50 AB',uzaklik:'Neptün’ün ötesi',yas:'≈ 4,6 milyar yıl',sicaklik:null,kutle:null,isikYili:null,isikSuresi:null,ozellik:['Plüton, Eris, Makemake gibi cüce gezegenleri barındırır.','Kısa dönemli kuyruklu yıldızların kaynağı.'],kaynak:'NASA',guven:'G',gorsel:'Parçacık dağılımı temsilidir.'},
+  halley:{ad:'Halley Kuyruklu Yıldızı (1P/Halley)',tur:'Kısa dönemli kuyruklu yıldız',boyut:'Çekirdek ≈ 15 × 8 km',uzaklik:'Günberi 0,59 AB; günöte ≈ 35 AB',yas:null,sicaklik:null,kutle:'≈ 2,2×10¹⁴ kg',isikYili:null,isikSuresi:null,ozellik:['Dönemi ≈ 75–76 yıl; son günberi 1986, sonraki ≈ 2061.','Kuyruk daima Güneş’in tersini gösterir (Güneş rüzgârı).','Ters (retrograd) yönde dolanır.'],kaynak:'NASA; ESA Giotto',guven:'G',gorsel:'Kuyruk uzunluğu ve parlaklığı görsel amaçlı abartılmıştır.'},
+};
+
+/* =========================================================
+   2) YARDIMCILAR
+   ========================================================= */
+function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+let R = rng(42);
+const gauss = ()=>{ let u=0,v=0; while(!u)u=R(); while(!v)v=R(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); };
+const randSphere = (r)=>{ const v=new THREE.Vector3(gauss(),gauss(),gauss()).normalize(); return v.multiplyScalar(r*Math.cbrt(R())); };
+const $ = s=>document.querySelector(s);
+const isMobile = matchMedia('(max-width:820px)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
+const cores = navigator.hardwareConcurrency||4;
+const TIER = isMobile ? 0.45 : (cores<=4 ? 0.7 : 1);   // parçacık bütçesi
+$('#selQ').value = isMobile ? '0.35' : (cores<=4?'0.7':'1');
+const N = n=>Math.floor(n*TIER);
+
+function glowTex(inner='rgba(255,255,255,1)', mid='rgba(255,255,255,.35)'){
+  const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d');
+  const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,inner); gr.addColorStop(.25,mid); gr.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle=gr; g.fillRect(0,0,64,64); const t=new THREE.CanvasTexture(c); return t; }
+const GLOW = glowTex();
+
+const scalables=[]; // dinamik kalite için çizim aralığı ayarlanan parçacıklar
+function makePoints(pos, col, size, opacity=1, scalable=true){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));
+  g.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  const m=new THREE.PointsMaterial({size,map:GLOW,vertexColors:true,transparent:true,opacity,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+  const p=new THREE.Points(g,m); p.frustumCulled=false;
+  if(scalable){ // dağılım karıştırılır ki çizim aralığı kesildiğinde yapı korunsun
+    shuffle(g); scalables.push({g,n:pos.length/3}); g.setDrawRange(0,Math.floor(pos.length/3*qual)); }
+  return p;
+}
+function shuffle(g){ const p=g.attributes.position.array,c=g.attributes.color.array,n=p.length/3;
+  for(let i=n-1;i>0;i--){const j=Math.floor(R()*(i+1)); for(let k=0;k<3;k++){let t=p[i*3+k];p[i*3+k]=p[j*3+k];p[j*3+k]=t;t=c[i*3+k];c[i*3+k]=c[j*3+k];c[j*3+k]=t;}} }
+let qual = parseFloat($('#selQ').value);
+function applyQuality(){ scalables.forEach(s=>s.g.setDrawRange(0,Math.floor(s.n*qual))); }
+
+// Prosedürel sarmal galaksi (temsili)
+function makeGalaxy({n,R:rad,arms=2,bar=0,pitch=13,thick=0.03,bulge=0.15,inner=[1,.85,.6],outer=[.55,.7,1],size=1,hii=0.06}){
+  const pos=[],col=[]; const k=1/Math.tan(pitch*Math.PI/180); const r0=Math.max(bar,rad*0.12);
+  for(let i=0;i<n;i++){
+    const u=R(); let x,y,z,c;
+    if(u<bulge){ const s=rad*0.09; x=gauss()*s; y=gauss()*s*0.7; z=gauss()*s; c=[1,.82,.55]; }
+    else if(bar && u<bulge+0.1){ x=(R()*2-1)*bar; y=gauss()*rad*0.015; z=gauss()*rad*0.03; c=[1,.78,.5]; }
+    else{
+      const r=r0+(rad-r0)*Math.pow(R(),0.85); const a=Math.floor(R()*arms);
+      const th=a*2*Math.PI/arms + k*Math.log(r/r0); const sc=(0.1+0.25*R())*r*0.35*(R()<0.25?3:1);
+      const ang=th+gauss()*sc/r; const rr=r+gauss()*sc*0.3;
+      x=Math.cos(ang)*rr; z=Math.sin(ang)*rr; y=gauss()*rad*thick*(1.2-r/rad);
+      const t=Math.min(1,r/rad); c=[inner[0]*(1-t)+outer[0]*t,inner[1]*(1-t)+outer[1]*t,inner[2]*(1-t)+outer[2]*t];
+      if(R()<hii) c=[1,.4,.6];
+    }
+    const b=0.6+0.4*R(); pos.push(x,y,z); col.push(c[0]*b,c[1]*b,c[2]*b);
+  }
+  return makePoints(pos,col,size,0.9);
+}
+function makeIrregular({n,R:rad,size=1,clumps=6,bar=0}){
+  const pos=[],col=[]; const C=[]; for(let i=0;i<clumps;i++) C.push(randSphere(rad*0.6).multiply(new THREE.Vector3(1,.35,1)));
+  for(let i=0;i<n;i++){ let p; if(bar&&R()<0.35){p=new THREE.Vector3((R()*2-1)*bar,gauss()*rad*.05,gauss()*rad*.1);} else {const c=C[Math.floor(R()*clumps)]; p=c.clone().add(new THREE.Vector3(gauss(),gauss()*.4,gauss()).multiplyScalar(rad*0.25));}
+    const b=.6+.4*R(); const pk=R()<.08; pos.push(p.x,p.y,p.z); col.push(pk?1:.7*b,pk?.45:.8*b,pk?.7:1*b); }
+  return makePoints(pos,col,size,0.9);
+}
+function makeElliptical({n,R:rad,size=1,flat=.7}){ const pos=[],col=[];
+  for(let i=0;i<n;i++){ const r=rad*Math.pow(R(),2.2); const v=new THREE.Vector3(gauss(),gauss()*flat,gauss()).normalize().multiplyScalar(r); pos.push(v.x,v.y,v.z); const b=.6+.4*R(); col.push(1*b,.85*b,.65*b); }
+  return makePoints(pos,col,size,0.9); }
+function sprite(color, scale, opacity=1){ const m=new THREE.SpriteMaterial({map:GLOW,color,transparent:true,opacity,depthWrite:false,blending:THREE.AdditiveBlending}); const s=new THREE.Sprite(m); s.scale.setScalar(scale); return s; }
+
+// Basit gürültü (prosedürel doku)
+function vnoise(seed){ const r=rng(seed); const P=new Float32Array(512*512); for(let i=0;i<P.length;i++)P[i]=r();
+  const at=(x,y)=>P[((y&511)<<9)|(x&511)];
+  const n=(x,y)=>{const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi,u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+    return at(xi,yi)*(1-u)*(1-v)+at(xi+1,yi)*u*(1-v)+at(xi,yi+1)*(1-u)*v+at(xi+1,yi+1)*u*v;};
+  return (x,y,o=5)=>{let s=0,a=.5,f=1;for(let i=0;i<o;i++){s+=a*n(x*f,y*f);a*=.5;f*=2;}return s;}; }
+function planetTex(kind, c1, c2, seed=1){
+  const W=512,H=256,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');const img=g.createImageData(W,H);const f=vnoise(seed);
+  const A=new THREE.Color(c1),B=new THREE.Color(c2);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ const i=(y*W+x)*4; let t,r,gg,b;
+    const lat=y/H, wx=Math.cos(x/W*2*Math.PI), wz=Math.sin(x/W*2*Math.PI); // dikişsiz için silindirik örnekleme
+    const nn=f(wx*3+10,wz*3+lat*12+10);
+    if(kind==='band'){ t=0.5+0.5*Math.sin(lat*Math.PI*14+nn*5); }
+    else if(kind==='earth'){ const h=f(wx*2.2+5+lat*3,wz*2.2+lat*7,6); const ice=Math.abs(lat-.5)>.43;
+      if(ice){r=240;gg=245;b=250;} else if(h>.53){const d=f(wx*8,wz*8+lat*30,3); r=60+100*d;gg=110+60*d;b=50+30*d; if(Math.abs(lat-.5)<.12&&h>.6){r=190;gg=160;b=110;}} else {r=15;gg=50+40*h;b=110+80*h;}
+      img.data[i]=r;img.data[i+1]=gg;img.data[i+2]=b;img.data[i+3]=255;continue; }
+    else t=nn;
+    const c=A.clone().lerp(B,Math.min(1,Math.max(0,t))); img.data[i]=c.r*255;img.data[i+1]=c.g*255;img.data[i+2]=c.b*255;img.data[i+3]=255; }
+  g.putImageData(img,0,0);
+  if(kind==='band'&&seed===5){ g.fillStyle='rgba(180,70,40,.8)'; g.beginPath(); g.ellipse(W*.6,H*.62,22,11,0,0,7); g.fill(); } // Büyük Kırmızı Leke
+  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t; }
+function cloudTex(){ const W=512,H=256,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');const img=g.createImageData(W,H);const f=vnoise(77);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=(y*W+x)*4,wx=Math.cos(x/W*6.283),wz=Math.sin(x/W*6.283);const v=f(wx*3,wz*3+y/H*14,6);const a=Math.max(0,(v-.5)*3.2);img.data[i]=img.data[i+1]=img.data[i+2]=255;img.data[i+3]=Math.min(255,a*255);}
+  g.putImageData(img,0,0); const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t; }
+
+function orbitLine(radius, color=0x4ff0e6, opacity=.25, seg=256){ const p=[]; for(let i=0;i<=seg;i++){const a=i/seg*Math.PI*2;p.push(Math.cos(a)*radius,0,-Math.sin(a)*radius);}
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));
+  const l=new THREE.Line(g,new THREE.LineBasicMaterial({color,transparent:true,opacity})); l.userData.orbit=true; return l; }
+
+/* =========================================================
+   3) SAHNE
+   ========================================================= */
+const canvas=$('#c');
+let renderer;
+try{ renderer=new THREE.WebGLRenderer({canvas,antialias:!isMobile,powerPreference:'high-performance'}); }
+catch(e){ window.__showErr('<h2 style="color:#4ff0e6">WebGL başlatılamadı</h2><p>'+e.message+'</p>'); throw e; }
+let maxPR = Math.min(devicePixelRatio, isMobile?1.5:2);
+renderer.setPixelRatio(maxPR); renderer.setSize(innerWidth,innerHeight);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x020308);
+const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.01,20000);
+const controls=new OrbitControls(camera,canvas);
+controls.enableDamping=true; controls.dampingFactor=0.07; controls.rotateSpeed=0.6; controls.zoomSpeed=0.9;
+controls.autoRotateSpeed=0.4;
+scene.add(new THREE.AmbientLight(0xffffff,0.12));
+
+// Arka plan yıldız alanı (yalnızca Güneş Sistemi ve Dünya seviyelerinde: orada fiziksel olarak anlamlıdır)
+const stars=(()=>{ const pos=[],col=[]; for(let i=0;i<N(9000);i++){const v=new THREE.Vector3(gauss(),gauss(),gauss()).normalize().multiplyScalar(5000);pos.push(v.x,v.y,v.z);const t=R(),b=.4+.6*R()*R();col.push(b*(t<.3?.7:1),b*.9,b*(t<.3?1:.85));}
+  const p=makePoints(pos,col,14,1,false); p.material.sizeAttenuation=false; p.material.size=isMobile?2.2:1.8; return p; })();
+scene.add(stars);
+
+/* ---------- Seviye altyapısı ---------- */
+const LEVELS={}, ORDER=['universe','laniakea','localgroup','milkyway','andromeda','solar','earthmoon'];
+function level(id,o){ const g=new THREE.Group(); g.visible=false; scene.add(g); LEVELS[id]={id,group:g,picks:[],update:null,...o}; return LEVELS[id]; }
+function pick(L,id,obj,r,opt={}){ // tıklanabilir nesne
+  const hit=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshBasicMaterial({visible:false}));
+  L.group.add(hit); const p={id,L,obj,r,hit,drill:opt.drill||null,label:opt.label||DATA[id].ad,minHit:opt.minHit??0.018,info:DATA[id]};
+  L.picks.push(p); return p; }
+const tmpV=new THREE.Vector3();
+
+/* ---------- SEVİYE 0: GÖZLEMLENEBİLİR EVREN (1 birim ≈ 46,5 milyon ışık yılı) ---------- */
+{
+  const L=level('universe',{ad:'Gözlemlenebilir Evren',parent:null,unit:{ly:4.65e7},cam:[0,700,2300],minD:30,maxD:3200,
+    note:'Ölçek: 1 birim ≈ 46,5 milyon ışık yılı (doğrusal). Kozmik ağın iplikçik ve düğüm konumları TEMSİLİDİR (prosedürel). Dış küre fiziksel bir duvar değil, ışığın bize ulaşabildiği ufkun temsilidir.'});
+  const RAD=1000;
+  // KMA küresi (shader ile temsili desen)
+  const cmb=new THREE.Mesh(new THREE.SphereGeometry(RAD,96,64),new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
+    uniforms:{t:{value:0}},
+    vertexShader:`varying vec3 vP; varying vec3 vN; varying vec3 vV; void main(){vP=normalize(position);vN=normalize(normalMatrix*normal);vec4 mv=modelViewMatrix*vec4(position,1.);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}`,
+    fragmentShader:`varying vec3 vP; varying vec3 vN; varying vec3 vV; uniform float t;
+      float h(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+      float n(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(mix(h(i),h(i+vec3(1,0,0)),f.x),mix(h(i+vec3(0,1,0)),h(i+vec3(1,1,0)),f.x),f.y),mix(mix(h(i+vec3(0,0,1)),h(i+vec3(1,0,1)),f.x),mix(h(i+vec3(0,1,1)),h(i+vec3(1,1,1)),f.x),f.y),f.z);}
+      void main(){vec3 p=vP*7.;float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*n(p);p*=2.1;a*=.5;}
+        vec3 c=mix(vec3(.05,.15,.6),vec3(.9,.35,.08),smoothstep(.3,.7,s));
+        float rim=pow(1.-abs(dot(vN,vV)),2.5); gl_FragColor=vec4(c,(.05+.55*rim));}`}));
+  L.group.add(cmb); L.cmb=cmb;
+  // Kozmik ağ: düğümler + iplikçikler + boşluklar
+  const nodes=[new THREE.Vector3(0,0,0)]; for(let i=0;i<70;i++) nodes.push(randSphere(RAD*0.88));
+  const pos=[],col=[]; const edges=new Set();
+  nodes.forEach((a,i)=>{ const d=nodes.map((b,j)=>[a.distanceTo(b),j]).sort((x,y)=>x[0]-y[0]); for(let k=1;k<=3;k++){const j=d[k][1]; const key=i<j?i+'-'+j:j+'-'+i; edges.add(key);} });
+  const total=N(160000), perEdge=Math.floor(total*0.6/edges.size);
+  edges.forEach(key=>{ const [i,j]=key.split('-').map(Number); const a=nodes[i],b=nodes[j]; const mid=a.clone().lerp(b,.5).add(randSphere(a.distanceTo(b)*0.15));
+    for(let k=0;k<perEdge;k++){ const t=R(); const p=a.clone().multiplyScalar((1-t)*(1-t)).add(mid.clone().multiplyScalar(2*t*(1-t))).add(b.clone().multiplyScalar(t*t));
+      const w=RAD*0.012*(0.5+Math.sin(t*Math.PI)); p.x+=gauss()*w;p.y+=gauss()*w;p.z+=gauss()*w; if(p.length()>RAD*.98)continue;
+      pos.push(p.x,p.y,p.z); const b2=.4+.5*R(); col.push(.45*b2,.55*b2,1*b2); } });
+  const perNode=Math.floor(total*0.3/nodes.length);
+  nodes.forEach(n=>{ const s=RAD*(0.008+0.02*R()); for(let k=0;k<perNode;k++){ pos.push(n.x+gauss()*s,n.y+gauss()*s,n.z+gauss()*s); const b2=.6+.4*R(); col.push(1*b2,.85*b2,.65*b2);} });
+  for(let k=0;k<total*0.04;k++){ const p=randSphere(RAD*.95); pos.push(p.x,p.y,p.z); col.push(.25,.25,.4); } // boşluklardaki seyrek galaksiler
+  L.group.add(makePoints(pos,col,9,0.85));
+  // tıklanabilirler
+  const here=sprite(0x4ff0e6,30); L.group.add(here); pick(L,'laniakea',here,8,{drill:'laniakea',label:'Biz buradayız (Laniakea)'});
+  const big=nodes.slice(1).sort((a,b)=>b.length()-a.length()).slice(0,4);
+  big.forEach((n,i)=>{const o=new THREE.Object3D();o.position.copy(n);L.group.add(o);pick(L,'node',o,20,{label:'Düğüm (temsili) '+(i+1)});});
+  const dirOf=(seed,d)=>{const r=rng(seed);return new THREE.Vector3(r()-.5,(r()-.5)*.5,r()-.5).normalize().multiplyScalar(d);};
+  const sl=new THREE.Object3D(); sl.position.copy(dirOf(3,1e9/4.65e7)); L.group.add(sl); pick(L,'sloan',sl,15);
+  const bo=new THREE.Object3D(); bo.position.copy(dirOf(9,7e8/4.65e7)); L.group.add(bo); pick(L,'bootes',bo,4);
+  const gz=sprite(0xff8866,25); gz.position.copy(dirOf(5,32e9/4.65e7)); L.group.add(gz); pick(L,'gnz11',gz,5);
+  const cmbo=new THREE.Object3D(); cmbo.position.set(0,RAD,0); L.group.add(cmbo); pick(L,'cmb',cmbo,30,{label:'KMA / Gözlemlenebilir sınır'});
+  L.extra=[{id:'universe'},{id:'web'}];
+  L.update=(dt,t)=>{ cmb.material.uniforms.t.value=t; };
+}
+
+/* ---------- SEVİYE 1: LANIAKEA (1 birim = 1 milyon ışık yılı) ---------- */
+{
+  const L=level('laniakea',{ad:'Laniakea Süperkümesi',parent:'universe',unit:{ly:1e6},cam:[250,350,650],minD:5,maxD:1400,
+    note:'Ölçek: 1 birim = 1 milyon ışık yılı (doğrusal). Uzaklıklar gerçek değerlere dayanır; yönler ve akış çizgileri yaklaşık/temsilidir.'});
+  const C=new THREE.Vector3(120,-20,-100), GA=new THREE.Vector3(160,-30,-140);
+  const pos=[],col=[];
+  // galaksi akış çizgileri Büyük Çekici'ye doğru
+  for(let s=0;s<N(380);s++){ let p=C.clone().add(randSphere(260)); const steps=60;
+    for(let k=0;k<steps;k++){ const dir=GA.clone().sub(p); const d=dir.length(); if(d<10)break; dir.normalize();
+      const curl=new THREE.Vector3(-dir.z,0.3*dir.x,dir.x).multiplyScalar(0.4); p.add(dir.add(curl).multiplyScalar(4));
+      for(let m=0;m<2;m++){ pos.push(p.x+gauss()*2,p.y+gauss()*2,p.z+gauss()*2); const t=Math.min(1,d/260); col.push(1-.4*t,.75,.45+.5*t);} } }
+  const cluster=(c,n,s,colr)=>{ for(let k=0;k<n;k++){ pos.push(c.x+gauss()*s,c.y+gauss()*s*.8,c.z+gauss()*s); const b=.6+.4*R(); col.push(colr[0]*b,colr[1]*b,colr[2]*b);} };
+  const V=new THREE.Vector3(-30,10,-45), F=new THREE.Vector3(20,-55,-20), CO=new THREE.Vector3(-160,260,100), PP=new THREE.Vector3(-200,-40,160);
+  cluster(V,N(5000),5,[1,.9,.7]); cluster(GA,N(7000),9,[1,.85,.6]); cluster(F,N(1500),3,[1,.9,.75]);
+  cluster(CO,N(5000),7,[.7,.8,1]); for(let k=0;k<10;k++) cluster(PP.clone().add(new THREE.Vector3((k-5)*14,gauss()*8,(k-5)*-8)),N(500),6,[.6,.7,1]);
+  for(let k=0;k<N(6000);k++){ const p=randSphere(650); pos.push(p.x,p.y,p.z); col.push(.25,.3,.5); }
+  L.group.add(makePoints(pos,col,2.2,.9));
+  const ring=new THREE.Mesh(new THREE.SphereGeometry(260,48,32),new THREE.MeshBasicMaterial({color:0xffb070,wireframe:true,transparent:true,opacity:.04}));
+  ring.position.copy(C); L.group.add(ring);
+  const lg=sprite(0x4ff0e6,10); L.group.add(lg);
+  const ob=(v,id,r,o)=>{const x=new THREE.Object3D();x.position.copy(v);L.group.add(x);return pick(L,id,x,r,o);};
+  pick(L,'localgroup',lg,2,{drill:'localgroup',label:'Yerel Grup (biz)'});
+  ob(V,'virgo',8); ob(V.clone().add(new THREE.Vector3(1,0,1)),'m87',2,{label:'M87'}); ob(GA,'ga',12); ob(F,'fornax',4); ob(CO,'coma',10); ob(PP,'perseus',20); ob(C.clone().add(new THREE.Vector3(0,40,0)),'laniakea',30);
+}
+
+/* ---------- SEVİYE 2: YEREL GRUP (1 birim = 10.000 ışık yılı) ---------- */
+{
+  const L=level('localgroup',{ad:'Yerel Grup',parent:'laniakea',unit:{ly:1e4},cam:[120,160,330],minD:2,maxD:900,
+    note:'Ölçek: 1 birim = 10.000 ışık yılı (doğrusal). Galaksi çapları ve uzaklıkları gerçek orana yakındır; gökyüzündeki yönler yaklaşıktır.'});
+  const mw=makeGalaxy({n:N(26000),R:5,arms:4,bar:1.4,size:.12}); L.group.add(mw);
+  const an=makeGalaxy({n:N(32000),R:11,arms:2,pitch:9,size:.22}); an.position.set(180,60,-160); an.rotation.set(.9,0,.4); L.group.add(an);
+  const m33=makeGalaxy({n:N(9000),R:3,arms:2,pitch:20,size:.09,hii:.12}); m33.position.set(205,10,-200); m33.rotation.set(-.6,0,.3); L.group.add(m33);
+  const lmc=makeIrregular({n:N(5000),R:1.6,size:.06,bar:.7}); lmc.position.set(12,-8,-8); L.group.add(lmc);
+  const smc=makeIrregular({n:N(2500),R:.95,size:.05,clumps:3}); smc.position.set(14,-12,-6); L.group.add(smc);
+  for(let i=0;i<30;i++){ const s=sprite(0xaabbdd,.5+R(),.5); const p=R()<.5?randSphere(30):randSphere(40).add(an.position); s.position.copy(p); L.group.add(s);} // cüce uydu galaksiler (temsili)
+  pick(L,'milkyway',mw,5,{drill:'milkyway'}); pick(L,'andromeda',an,11,{drill:'andromeda'}); pick(L,'m33',m33,3); pick(L,'lmc',lmc,1.6); pick(L,'smc',smc,1);
+}
+
+/* ---------- SEVİYE 3: SAMANYOLU (1 birim = 100 ışık yılı) ---------- */
+{
+  const L=level('milkyway',{ad:'Samanyolu',parent:'localgroup',unit:{ly:100},cam:[0,520,700],minD:3,maxD:1600,
+    note:'Ölçek: 1 birim = 100 ışık yılı (doğrusal). Çubuk ve kol yapısı gözlemsel modellere dayanır; tek tek yıldızlar gerçek konumlar değildir (prosedürel). Güneş, merkezden ≈ 26.000 ışık yılı uzaktadır.'});
+  const g=makeGalaxy({n:N(170000),R:500,arms:4,bar:135,pitch:12.5,thick:.025,size:3.2,bulge:.13}); L.group.add(g);
+  // Orion kolu (Güneş'in bulunduğu küçük kol)
+  const sunP=new THREE.Vector3(-60,1,253); const pos=[],col=[];
+  for(let i=0;i<N(9000);i++){ const t=(R()-.5)*1.8; const p=new THREE.Vector3(Math.sin(t+0.23)*262,0,Math.cos(t+0.23)*262).add(new THREE.Vector3(gauss()*12,gauss()*3,gauss()*12)); pos.push(p.x,p.y,p.z); const b=.5+.5*R(); col.push(.7*b,.8*b,1*b);}
+  L.group.add(makePoints(pos,col,2,.9));
+  const sun=sprite(0xffee88,18); sun.position.copy(sunP); L.group.add(sun);
+  const bh=new THREE.Mesh(new THREE.SphereGeometry(1.5,16,12),new THREE.MeshBasicMaterial({color:0})); L.group.add(bh); const bhg=sprite(0xffaa66,40,.9); L.group.add(bhg);
+  pick(L,'sun',sun,1,{drill:'solar',label:'Güneş (biz buradayız)',minHit:.025});
+  pick(L,'sgra',bh,2);
+  const o=(v,id,r,c,s)=>{ let x; if(c){x=sprite(c,s,.8);} else x=new THREE.Object3D(); x.position.copy(v); L.group.add(x); return pick(L,id,x,r); };
+  o(new THREE.Vector3(80,0,-40),'bar',60); o(new THREE.Vector3(Math.sin(-.5)*262,0,Math.cos(-.5)*262),'orionarm',40);
+  o(sunP.clone().add(new THREE.Vector3(-9,-2,10)),'orionneb',.5,0xff6f9a,6);
+  o(sunP.clone().add(new THREE.Vector3(70,0,-50)),'carina',2,0xff7766,12);
+  o(sunP.clone().add(new THREE.Vector3(-50,1,40)),'crab',.5,0x88ccff,5);
+}
+
+/* ---------- SEVİYE 3b: ANDROMEDA (1 birim = 100 ışık yılı) ---------- */
+{
+  DATA.m32={ad:'M32',tur:'Cüce eliptik galaksi (Andromeda uydusu)',boyut:'Çap ≈ 6.500 ışık yılı',uzaklik:'≈ 2,5 milyon ışık yılı',yas:null,sicaklik:null,kutle:'≈ 3×10⁹ Güneş kütlesi',isikYili:'≈ 2,5 milyon ışık yılı',isikSuresi:'≈ 2,5 milyon yıl',ozellik:['Çok yoğun, kompakt bir eliptik galaksi.'],kaynak:'NASA',guven:'G',gorsel:'Andromeda’ya göre konumu yaklaşıktır.'};
+  DATA.m110={ad:'M110',tur:'Cüce eliptik galaksi (Andromeda uydusu)',boyut:'Çap ≈ 17.000 ışık yılı',uzaklik:'≈ 2,7 milyon ışık yılı',yas:null,sicaklik:null,kutle:null,isikYili:'≈ 2,7 milyon ışık yılı',isikSuresi:null,ozellik:['Az miktarda genç yıldız ve toz içerir.'],kaynak:'NASA',guven:'G',gorsel:'Konumu yaklaşıktır.'};
+  DATA.m31bh={ad:'M31* (Andromeda çekirdeği)',tur:'Süper kütleli kara delik',boyut:null,uzaklik:'≈ 2,5 milyon ışık yılı',yas:null,sicaklik:null,kutle:'≈ 1,4×10⁸ Güneş kütlesi',isikYili:'≈ 2,5 milyon ışık yılı',isikSuresi:'≈ 2,5 milyon yıl',ozellik:['Sgr A*’dan ≈ 30 kat daha kütleli.','Çift çekirdek görünümü (P1/P2) Hubble ile keşfedildi.'],kaynak:'Bender vd. 2005',guven:'G'};
+  const L=level('andromeda',{ad:'Andromeda (M31)',parent:'localgroup',unit:{ly:100},cam:[0,700,1500],minD:5,maxD:3000,
+    note:'Ölçek: 1 birim = 100 ışık yılı. Yıldız dağılımı prosedürel temsildir; çap (≈ 220.000 ışık yılı) gerçek değere dayanır.'});
+  L.group.add(makeGalaxy({n:N(150000),R:1100,arms:2,pitch:8,thick:.02,size:5,bulge:.2,inner:[1,.85,.65],outer:[.65,.75,1]}));
+  const m32=makeElliptical({n:N(3000),R:32,size:2}); m32.position.set(120,30,300); L.group.add(m32);
+  const m110=makeElliptical({n:N(5000),R:85,size:3,flat:.5}); m110.position.set(-200,-150,-420); L.group.add(m110);
+  const c=sprite(0xffddaa,60); L.group.add(c);
+  pick(L,'m31bh',c,5); pick(L,'m32',m32,32); pick(L,'m110',m110,85); const a=new THREE.Object3D(); a.position.set(700,0,0); L.group.add(a); pick(L,'andromeda',a,40);
+}
+
+/* ---------- SEVİYE 4: GÜNEŞ SİSTEMİ (sıkıştırılmış ölçek) ---------- */
+const AU2V = a=>10+16*Math.pow(a,0.55);     // yörünge sıkıştırması
+const D2R = d=>0.35*Math.pow(d/1000,0.45); // boyut sıkıştırması (d: km)
+const PLANETS=[ // a(AB), P(gün), L0(°, J2000 ortalama boylam), dönme(gün), eğiklik(°), çap(km)
+  {id:'mercury',a:.387,P:87.969,L0:252.25,rot:58.646,tilt:.03,d:4879,tex:['noise','#8c8680','#c9c2b8',2]},
+  {id:'venus',a:.723,P:224.701,L0:181.98,rot:-243.02,tilt:177.4,d:12104,tex:['noise','#d9b878','#f3e2b5',3]},
+  {id:'earth',a:1,P:365.256,L0:100.46,rot:.99727,tilt:23.44,d:12742,tex:['earth']},
+  {id:'mars',a:1.524,P:686.98,L0:355.45,rot:1.026,tilt:25.19,d:6779,tex:['noise','#9c4425','#d98a5b',4]},
+  {id:'jupiter',a:5.203,P:4332.59,L0:34.40,rot:.4135,tilt:3.13,d:139820,tex:['band','#a37c5a','#efe2c9',5]},
+  {id:'saturn',a:9.537,P:10759.22,L0:49.94,rot:.444,tilt:26.73,d:116460,tex:['band','#bfa071','#f1e2b8',6]},
+  {id:'uranus',a:19.19,P:30688.5,L0:313.23,rot:-.718,tilt:97.77,d:50724,tex:['band','#8fd3dc','#c7f0f2',7]},
+  {id:'neptune',a:30.07,P:60182,L0:304.88,rot:.671,tilt:28.32,d:49244,tex:['band','#3459c9','#6f9bf0',8]},
+  {id:'pluto',a:39.48,P:90560,L0:238.93,rot:-6.387,tilt:122.5,d:2377,tex:['noise','#a08670','#e8d8c4',9]},
+  {id:'ceres',a:2.77,P:1680,L0:153.9,rot:.378,tilt:4,d:939,tex:['noise','#666','#999',10]},
+];
+const J2000=Date.UTC(2000,0,1,12);
+const sim={t:(Date.now()-J2000)/864e5, speed:1, paused:false};
+{
+  const L=level('solar',{ad:'Güneş Sistemi',parent:'milkyway',unit:null,cam:[0,90,170],minD:2,maxD:480,follow:true,sim:true,stars:true,
+    note:'SIKIŞTIRILMIŞ GÖRSEL ÖLÇEK: Gezegenler büyütülmüş, yörünge yarıçapları sıkıştırılmıştır. Gerçek ölçekte Dünya, Güneş’ten ≈ 11.700 Dünya çapı uzakta ve görünmeyecek kadar küçük olurdu. Gezegen konumları seçili tarihe göre yaklaşık (dairesel yörünge) hesaplanır. Gerçek değerler bilgi panelindedir.'});
+  const sunM=new THREE.Mesh(new THREE.SphereGeometry(6,48,32),new THREE.MeshBasicMaterial({map:planetTex('noise','#ff9a1f','#fff3a0',11)}));
+  L.group.add(sunM); const sg=sprite(0xffcc66,40,.9); L.group.add(sg);
+  const light=new THREE.PointLight(0xffffff,3,0,0); L.group.add(light);
+  pick(L,'sun',sunM,6);
+  L.bodies=[];
+  PLANETS.forEach(p=>{
+    const r=D2R(p.d), dist=AU2V(p.a);
+    const holder=new THREE.Object3D(); const tilt=new THREE.Object3D(); tilt.rotation.z=p.tilt*Math.PI/180; holder.add(tilt);
+    const m=new THREE.Mesh(new THREE.SphereGeometry(r,48,32),new THREE.MeshStandardMaterial({map:planetTex(...p.tex),roughness:1,metalness:0}));
+    tilt.add(m); L.group.add(holder);
+    if(p.id==='saturn'){ const rg=new THREE.RingGeometry(r*1.24,r*2.27,96,1); const uv=rg.attributes.uv,ps=rg.attributes.position;
+      for(let i=0;i<uv.count;i++){const l=Math.hypot(ps.getX(i),ps.getY(i));uv.setXY(i,(l-r*1.24)/(r*1.03),.5);}
+      const cv=document.createElement('canvas');cv.width=256;cv.height=4;const gx=cv.getContext('2d');for(let x=0;x<256;x++){const a=(x>150&&x<162)?0.05:(0.35+0.55*Math.abs(Math.sin(x*.21))*(x<150?1:.7));gx.fillStyle=`rgba(225,205,165,${a})`;gx.fillRect(x,0,1,4);}
+      const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;
+      const ring=new THREE.Mesh(rg,new THREE.MeshBasicMaterial({map:tx,side:THREE.DoubleSide,transparent:true,depthWrite:false})); ring.rotation.x=-Math.PI/2; tilt.add(ring); }
+    L.group.add(orbitLine(dist,p.id==='pluto'||p.id==='ceres'?0xa98bff:0x4ff0e6,p.id==='pluto'||p.id==='ceres'?.15:.25));
+    const pk=pick(L,p.id,holder,r,{drill:p.id==='earth'?'earthmoon':null});
+    L.bodies.push({p,holder,mesh:m,dist});
+  });
+  // Ay (Güneş Sistemi görünümünde, sıkıştırılmış)
+  const earthB=L.bodies.find(b=>b.p.id==='earth');
+  const moon=new THREE.Mesh(new THREE.SphereGeometry(.3,24,16),new THREE.MeshStandardMaterial({map:planetTex('noise','#777','#bbb',12),roughness:1}));
+  L.group.add(moon); pick(L,'moon',moon,.3,{minHit:.012});
+  // Asteroit ve Kuiper kuşakları
+  const belt=(a1,a2,n,c,yS)=>{const pos=[],col=[];for(let i=0;i<n;i++){const a=AU2V(a1+(a2-a1)*R()),th=R()*6.283;pos.push(Math.cos(th)*a,gauss()*yS,Math.sin(th)*a);const b=.4+.6*R();col.push(c[0]*b,c[1]*b,c[2]*b);}return makePoints(pos,col,.5,.8);};
+  const ab=belt(2.2,3.3,N(9000),[.8,.75,.65],.5); L.group.add(ab); const kb=belt(30,50,N(12000),[.6,.7,.9],2.5); L.group.add(kb);
+  const abo=new THREE.Object3D(); abo.position.set(0,0,-AU2V(2.6)); L.group.add(abo); pick(L,'belt',abo,1);
+  const kbo=new THREE.Object3D(); kbo.position.set(AU2V(44),0,0); L.group.add(kbo); pick(L,'kuiper',kbo,3);
+  // Halley kuyruklu yıldızı (Kepler denklemi)
+  const hal={a:17.83,e:.967,P:75.32*365.25,tp:Date.UTC(1986,1,9)};
+  const halley=sprite(0xccf4ff,1.2); const hh=new THREE.Group(); hh.rotation.z=.31; L.group.add(hh); hh.add(halley);
+  const tailN=600, tg=new THREE.BufferGeometry(), tp=new Float32Array(tailN*3), tc=new Float32Array(tailN*3); tg.setAttribute('position',new THREE.BufferAttribute(tp,3)); tg.setAttribute('color',new THREE.BufferAttribute(tc,3));
+  const tail=new THREE.Points(tg,new THREE.PointsMaterial({size:.5,map:GLOW,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending})); tail.frustumCulled=false; hh.add(tail);
+  const tailSeed=[]; for(let i=0;i<tailN;i++) tailSeed.push([R(),gauss(),gauss()]);
+  { const pts=[]; for(let i=0;i<=360;i++){ const E=i/360*6.283; const x=hal.a*(Math.cos(E)-hal.e), y=hal.a*Math.sqrt(1-hal.e*hal.e)*Math.sin(E); const r=Math.hypot(x,y), s=AU2V(r)/r; pts.push(x*s,0,y*s);} const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pts,3)); const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:0xa98bff,transparent:true,opacity:.18})); l.userData.orbit=true; hh.add(l); }
+  pick(L,'halley',halley,.6,{minHit:.012});
+  L.update=()=>{
+    const t=sim.t;
+    L.bodies.forEach(b=>{ const th=(b.p.L0+360*t/b.p.P)*Math.PI/180; b.holder.position.set(Math.cos(th)*b.dist,0,-Math.sin(th)*b.dist); b.mesh.rotation.y=2*Math.PI*t/b.p.rot; });
+    const ml=(218.32+360*t/27.3217)*Math.PI/180; moon.position.copy(earthB.holder.position).add(new THREE.Vector3(Math.cos(ml)*2.6,0,-Math.sin(ml)*2.6));
+    sunM.rotation.y=2*Math.PI*t/25.38;
+    // Halley: M -> E (Newton) ; retrograd
+    const days=t-(hal.tp-J2000)/864e5; let M=2*Math.PI*days/hal.P; M=-(M%(2*Math.PI)); let E=M; for(let i=0;i<12;i++) E=E-(E-hal.e*Math.sin(E)-M)/(1-hal.e*Math.cos(E));
+    const x=hal.a*(Math.cos(E)-hal.e), y=hal.a*Math.sqrt(1-hal.e*hal.e)*Math.sin(E); const r=Math.hypot(x,y), s=AU2V(r)/r; halley.position.set(x*s,0,y*s);
+    const dir=halley.position.clone().normalize(); const len=Math.min(25,14/Math.max(r,.4)); const act=r<6?1:Math.max(0,1-(r-6)/6);
+    for(let i=0;i<tailN;i++){ const [u,a,b]=tailSeed[i]; const d=u*len; tp[i*3]=halley.position.x+dir.x*d+a*u*.6; tp[i*3+1]=b*u*.6; tp[i*3+2]=halley.position.z+dir.z*d-a*u*.0; const k=(1-u)*act; tc[i*3]=.6*k; tc[i*3+1]=.85*k; tc[i*3+2]=1*k; }
+    tg.attributes.position.needsUpdate=true; tg.attributes.color.needsUpdate=true;
+  };
+}
+
+/* ---------- SEVİYE 5: DÜNYA–AY (gerçek doğrusal ölçek, 1 birim = 1.000 km) ---------- */
+{
+  const L=level('earthmoon',{ad:'Dünya ve Ay',parent:'solar',unit:{km:1000},cam:[40,25,70],minD:7,maxD:1300,follow:true,sim:true,stars:true,
+    note:'GERÇEK DOĞRUSAL ÖLÇEK: 1 birim = 1.000 km. Dünya, Ay ve aralarındaki uzaklık gerçek orandadır (Ay ≈ 30 Dünya çapı uzakta). Güneş yönü ve Ay evresi seçili tarihe göre yaklaşık hesaplanır.'});
+  const earth=new THREE.Object3D(); L.group.add(earth); const tilt=new THREE.Object3D(); tilt.rotation.z=23.44*Math.PI/180; earth.add(tilt);
+  const em=new THREE.Mesh(new THREE.SphereGeometry(6.371,96,64),new THREE.MeshStandardMaterial({map:planetTex('earth'),roughness:.9})); tilt.add(em);
+  const cl=new THREE.Mesh(new THREE.SphereGeometry(6.43,64,48),new THREE.MeshStandardMaterial({map:cloudTex(),transparent:true,depthWrite:false})); tilt.add(cl);
+  const atm=sprite(0x4fa8ff,17,.35); earth.add(atm);
+  const moon=new THREE.Mesh(new THREE.SphereGeometry(1.737,64,48),new THREE.MeshStandardMaterial({map:planetTex('noise','#6d6d6d','#c8c8c8',12),roughness:1})); L.group.add(moon);
+  L.group.add(orbitLine(384.4,0xa98bff,.3));
+  const issOrbit=new THREE.Object3D(); issOrbit.rotation.x=51.6*Math.PI/180; L.group.add(issOrbit); const iss=sprite(0xffffff,.6); issOrbit.add(iss); const io=orbitLine(6.79,0xffffff,.2,128); issOrbit.add(io);
+  const sunLight=new THREE.DirectionalLight(0xffffff,2.6); L.group.add(sunLight); const sunS=sprite(0xfff0b0,120); L.group.add(sunS);
+  pick(L,'earth',earth,6.4); pick(L,'moon',moon,1.74); pick(L,'iss',iss,.1,{minHit:.012});
+  const sunO=new THREE.Object3D(); L.group.add(sunO); pick(L,'sun',sunO,1,{label:'Güneş yönü'});
+  L.update=()=>{ const t=sim.t;
+    const le=(100.46+360*t/365.256)*Math.PI/180; const sd=new THREE.Vector3(-Math.cos(le),0,Math.sin(le)); // Dünya'dan Güneş'e
+    sunLight.position.copy(sd).multiplyScalar(100); sunS.position.copy(sd).multiplyScalar(2500); sunO.position.copy(sd).multiplyScalar(2500);
+    const ml=(218.32+360*t/27.3217)*Math.PI/180; moon.position.set(Math.cos(ml)*384.4,0,-Math.sin(ml)*384.4);
+    moon.rotation.y=ml+Math.PI/2; // kilitlenme: hep aynı yüz
+    em.rotation.y=2*Math.PI*t/0.99727 + le; cl.rotation.y=em.rotation.y*1.02;
+    iss.position.set(Math.cos(t*2*Math.PI/(92.7/1440))*6.79,0,-Math.sin(t*2*Math.PI/(92.7/1440))*6.79);
+  };
+}
+
+/* =========================================================
+   4) GEZİNME, KAMERA, SEÇİM
+   ========================================================= */
+let cur=null, history=[], selected=null, follow=null, lastFollowPos=new THREE.Vector3(), tween=null;
+const labelsEl=$('#labels');
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function flyTo(pos,target,dur=1.6){ tween={p0:camera.position.clone(),t0:controls.target.clone(),p1:pos.clone(),t1:target.clone(),s:performance.now(),d:dur*1000}; }
+function enter(id,focusId=null,push=true){
+  const L=LEVELS[id]; if(!L) return;
+  if(cur && push && cur.id!==id) history.push(cur.id);
+  $('#fade').style.opacity=1;
+  setTimeout(()=>{
+    if(cur) cur.group.visible=false; cur=L; L.group.visible=true; stars.visible=!!L.stars;
+    deselect(); controls.minDistance=L.minD; controls.maxDistance=L.maxD;
+    const c=new THREE.Vector3(...L.cam); camera.position.copy(c.clone().multiplyScalar(1.9)); controls.target.set(0,0,0);
+    camera.near=L.minD*0.02; camera.far=L.maxD*8; camera.updateProjectionMatrix();
+    flyTo(c,new THREE.Vector3(),2.2);
+    buildLabels(); buildTree(); updateCrumbs();
+    $('#scaleNote').textContent=L.note; $('#sim').style.display=L.sim?'flex':'none';
+    $('#fade').style.opacity=0;
+    if(focusId){ const p=L.picks.find(p=>p.id===focusId); if(p) setTimeout(()=>select(p,true),700); }
+  },450);
+}
+function posOf(p){ return p.obj.getWorldPosition(tmpV).clone(); }
+function select(p,focus=false){
+  selected=p; showInfo(p.info,p); buildTree();
+  labelsEl.querySelectorAll('.lab').forEach(l=>l.classList.toggle('sel',l._p===p));
+  if(focus) focusOn(p);
+}
+function focusOn(p){
+  const target=posOf(p); const d=Math.max(p.r*5, cur.minD*1.5);
+  controls.minDistance=Math.min(cur.minD,p.r*1.6);
+  const dir=camera.position.clone().sub(controls.target).normalize(); if(dir.lengthSq()<.5) dir.set(0,.4,1).normalize();
+  flyTo(target.clone().add(dir.multiplyScalar(d)),target,1.8);
+  follow=cur.follow?p:null; if(follow) lastFollowPos.copy(target);
+}
+function deselect(){ selected=null; follow=null; $('#right').style.display='none'; document.body.classList.remove('rOpen'); labelsEl.querySelectorAll('.lab.sel').forEach(l=>l.classList.remove('sel')); }
+function drill(p){ if(p.drill) enter(p.drill); else focusOn(p); }
+
+/* ---------- Bilgi paneli ---------- */
+const NA='<span class="na">Bilgi mevcut değil</span>';
+const BADGE={G:'Gözlemsel veri',M:'Model / yaklaşık',T:'Temsili görsel'};
+function showInfo(d,p){
+  const row=(k,v)=>`<div class="row"><b>${k}</b><span>${v??NA}</span></div>`;
+  $('#info').innerHTML=`<div class="name">${d.ad}</div><div class="type">${d.tur??''}</div>
+   <span class="badge b-${d.guven}">${BADGE[d.guven]}</span>
+   ${row('Gerçek boyut',d.boyut)}${row('Uzaklık',d.uzaklik)}${row('Işık yılı',d.isikYili)}${row('Işığın yolculuğu',d.isikSuresi)}
+   ${row('Yaş',d.yas)}${row('Sıcaklık',d.sicaklik)}${row('Kütle',d.kutle)}
+   ${d.ozellik?`<ul class="feat">${d.ozellik.map(x=>`<li>${x}</li>`).join('')}</ul>`:''}
+   ${d.gorsel?`<div class="note">🎨 ${d.gorsel}</div>`:''}
+   ${cur&&cur.id==='solar'&&p&&p.L.id==='solar'&&d!==DATA.belt&&d!==DATA.kuiper?`<div class="note">📏 Bu görünümde boyut ve yörünge yarıçapı sıkıştırılmıştır; yukarıdaki değerler gerçektir.</div>`:''}
+   <div class="src">Kaynak: ${d.kaynak??NA}</div>
+   <div class="acts">${p?`<button id="aFocus">◎ Odaklan</button>`:''}${p&&p.drill?`<button id="aDrill">⤵ İçine in: ${LEVELS[p.drill].ad}</button>`:''}</div>`;
+  $('#right').style.display='block'; document.body.classList.add('rOpen');
+  if(p){ $('#aFocus').onclick=()=>focusOn(p); if(p.drill) $('#aDrill').onclick=()=>enter(p.drill); }
+}
+$('#closeR').onclick=deselect;
+
+/* ---------- Etiketler ---------- */
+function buildLabels(){ labelsEl.innerHTML=''; cur.picks.forEach(p=>{ const d=document.createElement('div'); d.className='lab'+(p.drill?' drill':''); d.textContent=p.label; d._p=p; p.el=d;
+  d.onclick=e=>{e.stopPropagation(); select(p,false);}; d.ondblclick=e=>{e.stopPropagation(); select(p); drill(p);}; labelsEl.appendChild(d); }); }
+function updateLabels(){
+  const show=$('#chkLabels').checked; const w=innerWidth,h=innerHeight;
+  cur.picks.forEach(p=>{ const v=posOf(p); const dist=v.distanceTo(camera.position);
+    p.hit.position.copy(cur.group.worldToLocal(v.clone())); p.hit.scale.setScalar(Math.max(p.r,dist*p.minHit));
+    if(!show){p.el.style.display='none';return;}
+    v.project(camera); if(v.z>1||Math.abs(v.x)>1.1||Math.abs(v.y)>1.1){p.el.style.display='none';return;}
+    p.el.style.display='block'; p.el.style.left=((v.x+1)/2*w)+'px'; p.el.style.top=((1-v.y)/2*h)+'px'; });
+}
+
+/* ---------- Keşif ağacı, arama, kırıntılar ---------- */
+function buildTree(){
+  const t=$('#tree'); t.innerHTML='';
+  ORDER.forEach(id=>{ const L=LEVELS[id]; const depth=id==='andromeda'?3:ORDER.indexOf(id)-(ORDER.indexOf(id)>4?1:0);
+    const d=document.createElement('div'); d.className='tl'+(cur===L?' cur':''); d.style.marginLeft=(depth*8)+'px'; d.textContent=(cur===L?'▾ ':'▸ ')+L.ad; d.onclick=()=>enter(id); t.appendChild(d);
+    if(cur===L){ (L.extra||[]).forEach(e=>{const c=document.createElement('div');c.className='tc';c.style.marginLeft=(depth*8)+'px';c.textContent=DATA[e.id].ad;c.onclick=()=>{selected=null;showInfo(DATA[e.id],null);};t.appendChild(c);});
+      L.picks.forEach(p=>{ const c=document.createElement('div'); c.className='tc'+(selected===p?' sel':''); c.style.marginLeft=(depth*8)+'px'; c.textContent=p.label+(p.drill?' ⤵':''); c.onclick=()=>{select(p,true); if(isMobile)$('#left').classList.remove('open');}; c.ondblclick=()=>drill(p); t.appendChild(c); }); }
+  });
+}
+function updateCrumbs(){ const chain=[]; let L=cur; while(L){chain.unshift(L);L=LEVELS[L.parent];}
+  $('#crumbs').innerHTML=chain.map((l,i)=>i===chain.length-1?`<b style="color:var(--text)">${l.ad}</b>`:`<a data-l="${l.id}">${l.ad}</a>`).join(' › ');
+  $('#crumbs').querySelectorAll('a').forEach(a=>a.onclick=()=>enter(a.dataset.l)); }
+const INDEX=[]; ORDER.forEach(id=>LEVELS[id].picks.forEach(p=>{ if(!INDEX.some(x=>x.p.info===p.info&&x.p.L.id===id)) INDEX.push({p,name:p.info.ad,lvl:LEVELS[id].ad}); }));
+const norm=s=>s.toLocaleLowerCase('tr').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/ı/g,'i');
+const res=$('#results');
+$('#search').addEventListener('input',e=>{ const q=norm(e.target.value.trim()); if(!q){res.style.display='none';return;}
+  const m=INDEX.filter(x=>norm(x.name+' '+x.p.label).includes(q)).slice(0,12);
+  res.innerHTML=m.length?m.map((x,i)=>`<div data-i="${INDEX.indexOf(x)}">${x.name} <small>· ${x.lvl}</small></div>`).join(''):'<div style="color:var(--dim)">Sonuç yok</div>'; res.style.display='block';
+  res.querySelectorAll('[data-i]').forEach(d=>d.onclick=()=>{ const x=INDEX[+d.dataset.i]; res.style.display='none'; $('#search').value=''; $('#search').blur(); goTo(x.p); }); });
+$('#search').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const f=res.querySelector('[data-i]'); if(f) f.click(); } if(e.key==='Escape'){res.style.display='none';} });
+function goTo(p){ if(cur===p.L) select(p,true); else enter(p.L.id,p.id); }
+
+/* ---------- Fare / dokunmatik seçim ---------- */
+const ray=new THREE.Raycaster(), ndc=new THREE.Vector2(); let down=null, lastTap=0;
+function hitTest(x,y){ ndc.set(x/innerWidth*2-1,-(y/innerHeight)*2+1); ray.setFromCamera(ndc,camera);
+  const hits=ray.intersectObjects(cur.picks.map(p=>p.hit),false); if(!hits.length) return null;
+  // en küçük gerçek yarıçaplıyı tercih et (iç içe nesneler için)
+  hits.sort((a,b)=>{const pa=cur.picks.find(p=>p.hit===a.object),pb=cur.picks.find(p=>p.hit===b.object);return pa.r-pb.r;});
+  return cur.picks.find(p=>p.hit===hits[0].object); }
+canvas.addEventListener('pointerdown',e=>{ down={x:e.clientX,y:e.clientY}; stopTour(); res.style.display='none'; });
+canvas.addEventListener('pointerup',e=>{ if(!down) return; const moved=Math.hypot(e.clientX-down.x,e.clientY-down.y); down=null; if(moved>6) return;
+  const p=hitTest(e.clientX,e.clientY); const now=performance.now();
+  if(e.pointerType==='touch' && now-lastTap<320 && p){ select(p); drill(p); lastTap=0; return; } lastTap=now;
+  if(p) select(p,false); });
+canvas.addEventListener('dblclick',e=>{ const p=hitTest(e.clientX,e.clientY); if(p){ select(p); drill(p);} });
+controls.addEventListener('start',()=>{ tween=null; });
+// Hiyerarşik yakınlaştırma: maksimum uzaklıkta kaydırmaya devam etmek üst ölçeğe; seçili cisme en yakında devam etmek alt ölçeğe geçirir
+let outAcc=0,inAcc=0;
+canvas.addEventListener('wheel',e=>{ const d=camera.position.distanceTo(controls.target);
+  if(e.deltaY>0 && d>=controls.maxDistance*0.97 && cur.parent){ if(++outAcc>7){outAcc=0;enter(cur.parent);} } else outAcc=0;
+  if(e.deltaY<0 && selected && selected.drill && d<=controls.minDistance*1.25+selected.r*2){ if(++inAcc>7){inAcc=0;enter(selected.drill);} } else inAcc=0; },{passive:true});
+
+/* ---------- Butonlar ---------- */
+$('#btnBack').onclick=()=>{ const h=history.pop(); if(h) enter(h,null,false); };
+$('#btnUp').onclick=()=>{ if(cur.parent) enter(cur.parent); };
+$('#btnHome').onclick=()=>{ deselect(); flyTo(new THREE.Vector3(...cur.cam),new THREE.Vector3(),1.8); controls.minDistance=cur.minD; };
+$('#btnFull').onclick=()=>{ if(!document.fullscreenElement) (document.documentElement.requestFullscreen?.()||Promise.resolve()).catch(()=>{}); else document.exitFullscreen(); };
+$('#btnTree').onclick=()=>$('#left').classList.toggle('open');
+$('#btnInfo').onclick=()=>$('#mInfo').style.display='flex';
+$('#btnTime').onclick=()=>{ $('#mTime').style.display='flex'; showEra(curEra); };
+document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.modal').style.display='none');
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.style.display='none'; }));
+$('#chkOrbits').onchange=e=>scene.traverse(o=>{ if(o.userData.orbit) o.visible=e.target.checked; });
+$('#selQ').onchange=e=>{ qual=parseFloat(e.target.value); applyQuality(); };
+$('#btnPause').onclick=()=>{ sim.paused=!sim.paused; $('#btnPause').textContent=sim.paused?'▶':'❚❚'; $('#btnPause').classList.toggle('on',sim.paused); };
+$('#selSpeed').onchange=e=>sim.speed=parseFloat(e.target.value);
+$('#btnNow').onclick=()=>sim.t=(Date.now()-J2000)/864e5;
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>{ const id=b.dataset.go; const L=(id==='sun'&&cur.id!=='earthmoon')||cur.id==='solar'?LEVELS.solar:LEVELS.earthmoon; const p=L.picks.find(p=>p.id===id)||LEVELS.solar.picks.find(p=>p.id===id); goTo(p); });
+addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.key==='Escape'){deselect();document.querySelectorAll('.modal').forEach(m=>m.style.display='none');} if(e.key==='Backspace')$('#btnBack').click(); if(e.key===' '&&cur.sim){e.preventDefault();$('#btnPause').click();} });
+
+/* ---------- Otomatik keşif turu ---------- */
+const TOUR=[['universe',null],['universe','gnz11'],['laniakea',null],['laniakea','virgo'],['localgroup',null],['localgroup','andromeda'],['andromeda',null],['milkyway',null],['milkyway','sun'],['solar',null],['solar','jupiter'],['solar','saturn'],['earthmoon',null],['earthmoon','moon']];
+let tourI=-1, tourTimer=null;
+function tourStep(){ tourI=(tourI+1)%TOUR.length; const [l,f]=TOUR[tourI]; if(cur.id!==l) enter(l,f); else if(f){ const p=cur.picks.find(p=>p.id===f); select(p,true);} controls.autoRotate=true; }
+function stopTour(){ if(!tourTimer) return; clearInterval(tourTimer); tourTimer=null; controls.autoRotate=false; $('#btnTour').classList.remove('on'); $('#btnTour').textContent='▶ Tur'; }
+$('#btnTour').onclick=()=>{ if(tourTimer){stopTour();return;} $('#btnTour').classList.add('on'); $('#btnTour').textContent='■ Tur'; tourStep(); tourTimer=setInterval(tourStep,9000); };
+
+/* =========================================================
+   5) KOZMOLOJİK ZAMAN ÇİZELGESİ
+   ========================================================= */
+const ERAS=[
+  {ad:'Enflasyon',yas:'≈ 10⁻³⁶ – 10⁻³² saniye',txt:'Uzayın kendisi çok kısa sürede üstel olarak genişledi. Kuantum dalgalanmaları bugünkü galaksi dağılımının tohumlarını oluşturdu. Bu bir patlama değil, uzayın her yerde birden genişlemesidir.',g:'M',draw:'infl'},
+  {ad:'İlk çekirdekler',yas:'≈ 3 – 20 dakika',txt:'Büyük Patlama nükleosentezi: sıcaklık ≈ 1 milyar K’e düştüğünde proton ve nötronlar birleşerek hidrojen, helyum (kütlece ≈ %25) ve iz miktarda lityum çekirdekleri oluştu.',g:'M',draw:'nuc'},
+  {ad:'İlk atomlar ve KMA',yas:'≈ 380.000 yıl (z ≈ 1100)',txt:'Evren ≈ 3.000 K’e soğuyunca elektronlar çekirdeklere bağlandı (rekombinasyon). Evren saydamlaştı; o anda serbest kalan ışık bugün 2,725 K’lik kozmik mikrodalga arka planı olarak görülüyor.',g:'G',draw:'cmb'},
+  {ad:'Karanlık Çağlar',yas:'≈ 380.000 yıl – 100 milyon yıl',txt:'Henüz yıldız yoktu. Nötr hidrojen gazı ve karanlık madde, kütle çekimiyle yoğun bölgelerde toplanmaya başladı.',g:'M',draw:'dark'},
+  {ad:'İlk yıldızlar',yas:'≈ 100 – 200 milyon yıl',txt:'Popülasyon III olarak adlandırılan ilk yıldızlar muhtemelen çok kütleli ve kısa ömürlüydü. Patlamalarıyla evrene ilk ağır elementleri saçtılar. Henüz doğrudan gözlenemediler.',g:'M',draw:'stars'},
+  {ad:'İlk galaksiler',yas:'≈ 200 milyon – 1 milyar yıl',txt:'Küçük ön-galaksiler birleşti; morötesi ışınım nötr hidrojeni yeniden iyonlaştırdı (yeniden iyonlaşma çağı). JWST, z > 10 galaksileri (ör. GN-z11, JADES-GS-z14-0) gözlemliyor.',g:'G',draw:'protogal'},
+  {ad:'Galaksi oluşum zirvesi',yas:'≈ 2 – 4 milyar yıl (z ≈ 2)',txt:'“Kozmik öğle”: evrendeki yıldız oluşum hızı en yüksek seviyesindeydi. Galaksiler birleşmeler ve gaz akışlarıyla büyüdü; kozmik ağ belirginleşti.',g:'G',draw:'gal'},
+  {ad:'Güneş Sistemi oluşumu',yas:'≈ 9,2 milyar yıl (4,57 milyar yıl önce)',txt:'Bir moleküler bulutun çökmesiyle Güneş ve çevresindeki gezegen öncesi disk oluştu. Disk içinde toz ve buz birleşerek gezegenimsileri meydana getirdi.',g:'G',draw:'disk'},
+  {ad:'Dünya’nın oluşumu',yas:'≈ 9,3 milyar yıl (4,54 milyar yıl önce)',txt:'Dünya birleşme (akresyon) yoluyla oluştu. Kısa süre sonra Mars büyüklüğünde bir cisimle (Theia) çarpışmanın Ay’ı oluşturduğu düşünülüyor.',g:'M',draw:'earth'},
+  {ad:'Günümüz evreni',yas:'≈ 13,8 milyar yıl',txt:'Evren genişlemeye devam ediyor ve karanlık enerji nedeniyle bu genişleme hızlanıyor (1998’de keşfedildi). Gözlemlenebilir evrende ≈ 2 trilyon galaksi olduğu tahmin ediliyor (bazı yeni çalışmalar daha düşük değerler öneriyor).',g:'M',draw:'web'},
+];
+let curEra=2;
+ERAS.forEach((e,i)=>{ const b=document.createElement('button'); b.textContent=e.ad; b.onclick=()=>showEra(i); $('#eras').appendChild(b); });
+function showEra(i){ curEra=i; const e=ERAS[i]; [...$('#eras').children].forEach((b,j)=>b.classList.toggle('on',j===i));
+  $('#eraText').innerHTML=`<h3 style="margin:0 0 4px">${e.ad}</h3><div class="age">Kozmik yaş: ${e.yas}</div><p>${e.txt}</p><span class="badge b-${e.g}">${BADGE[e.g]}</span> <span class="badge b-T">Görsel: temsili</span>`;
+  drawEra(e.draw); }
+function drawEra(k){ const cv=$('#eraCanvas'),g=cv.getContext('2d'),W=cv.width,H=cv.height; const r=rng(k.length*99); g.globalCompositeOperation='source-over'; g.fillStyle='#000'; g.fillRect(0,0,W,H);
+  const dot=(x,y,s,c)=>{const gr=g.createRadialGradient(x,y,0,x,y,s);gr.addColorStop(0,c);gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-s,y-s,2*s,2*s);};
+  g.globalCompositeOperation='lighter';
+  if(k==='infl'){ for(let i=0;i<1500;i++){const a=r()*6.28,d=Math.pow(r(),.5)*260;dot(W/2+Math.cos(a)*d*1.2,H/2+Math.sin(a)*d,6,`rgba(255,${200+r()*55|0},${150+r()*100|0},.25)`);} }
+  if(k==='nuc'){ for(let i=0;i<2500;i++) dot(r()*W,r()*H,3+r()*3,r()<.25?'rgba(120,180,255,.6)':'rgba(255,160,60,.5)'); }
+  if(k==='cmb'){ const f=vnoise(5); const img=g.getImageData(0,0,W,H); for(let y=0;y<H;y+=2)for(let x=0;x<W;x+=2){const v=f(x/40,y/40);const c=v>.5?[230*(v-.5)*2+80,90,40]:[30,70,200*(.5-v)*2+80];for(let a=0;a<2;a++)for(let b=0;b<2;b++){const i=((y+a)*W+x+b)*4;img.data[i]=c[0];img.data[i+1]=c[1];img.data[i+2]=c[2];img.data[i+3]=255;}} g.putImageData(img,0,0); }
+  if(k==='dark'){ for(let i=0;i<500;i++) dot(r()*W,r()*H,10,'rgba(60,40,90,.15)'); }
+  if(k==='stars'){ for(let i=0;i<400;i++) dot(r()*W,r()*H,8,'rgba(50,40,90,.2)'); for(let i=0;i<14;i++) dot(r()*W,r()*H,10+r()*14,'rgba(160,200,255,.95)'); }
+  if(k==='protogal'){ for(let i=0;i<40;i++){const x=r()*W,y=r()*H;for(let j=0;j<40;j++)dot(x+(r()-.5)*30,y+(r()-.5)*30,3,'rgba(150,180,255,.6)');} }
+  if(k==='gal'||k==='web'){ const n=k==='web'?90:60; const P=[];for(let i=0;i<14;i++)P.push([r()*W,r()*H]); for(let i=0;i<P.length;i++)for(let j=i+1;j<P.length;j++){const d=Math.hypot(P[i][0]-P[j][0],P[i][1]-P[j][1]);if(d<k.length*60+40)for(let s=0;s<n;s++){const t=r();dot(P[i][0]+(P[j][0]-P[i][0])*t+(r()-.5)*10,P[i][1]+(P[j][1]-P[i][1])*t+(r()-.5)*10,2.5,'rgba(140,160,255,.6)');}} P.forEach(p=>{for(let s=0;s<60;s++)dot(p[0]+(r()-.5)*24,p[1]+(r()-.5)*24,3,'rgba(255,220,170,.7)');}); }
+  if(k==='disk'){ for(let i=0;i<3000;i++){const a=r()*6.28,d=20+Math.pow(r(),.7)*260;dot(W/2+Math.cos(a)*d,H/2+Math.sin(a)*d*.3,2.5,`rgba(${200+r()*55|0},${130+r()*60|0},80,.45)`);} dot(W/2,H/2,50,'rgba(255,230,150,1)'); }
+  if(k==='earth'){ dot(W/2,H/2,110,'rgba(255,90,20,.9)'); for(let i=0;i<300;i++) dot(W/2+(r()-.5)*150,H/2+(r()-.5)*150,6,'rgba(255,200,60,.3)'); dot(W*.82,H*.25,26,'rgba(200,190,180,.9)'); }
+  g.globalCompositeOperation='source-over'; g.fillStyle='rgba(255,255,255,.55)'; g.font='20px sans-serif'; g.fillText('Temsili görsel',14,H-14); }
+
+/* =========================================================
+   6) DÖNGÜ, MESAFE GÖSTERGESİ, PERFORMANS
+   ========================================================= */
+const trN=new Intl.NumberFormat('tr-TR',{maximumFractionDigits:1});
+function fmtLy(ly){ if(ly>=1e9) return trN.format(ly/1e9)+' milyar ışık yılı'; if(ly>=1e6) return trN.format(ly/1e6)+' milyon ışık yılı'; if(ly>=1) return trN.format(ly)+' ışık yılı'; return trN.format(ly*9.4607e12)+' km'; }
+function fmtKm(km){ if(km>=1e6) return trN.format(km/1e6)+' milyon km'; return trN.format(km)+' km'; }
+function updateDist(){
+  const d=camera.position.distanceTo(controls.target); const w=2*d*Math.tan(camera.fov*Math.PI/360)*camera.aspect;
+  let s;
+  if(cur.unit?.ly) s=`Kamera uzaklığı: <b>${fmtLy(d*cur.unit.ly)}</b><br><small>Ekran genişliği ≈ ${fmtLy(w*cur.unit.ly)}</small>`;
+  else if(cur.unit?.km) s=`Kamera uzaklığı: <b>${fmtKm(d*cur.unit.km)}</b><br><small>Ekran genişliği ≈ ${fmtKm(w*cur.unit.km)}</small>`;
+  else s=`<b>Sıkıştırılmış ölçek</b><br><small>Gerçek uzaklıklar bilgi panelinde</small>`;
+  $('#dist').innerHTML=s;
+  if(cur.sim) $('#simDate').textContent=new Date(J2000+sim.t*864e5).toLocaleDateString('tr-TR',{year:'numeric',month:'short',day:'numeric'});
+}
+const clock=new THREE.Clock(); let frames=0, fpsT=0, lowCount=0, elapsed=0;
+function animate(){
+  requestAnimationFrame(animate);
+  if(document.hidden || !cur) return;
+  const dt=Math.min(clock.getDelta(),.1); elapsed+=dt;
+  if(cur.sim && !sim.paused) sim.t+=dt*sim.speed;
+  if(tween){ const k=Math.min(1,(performance.now()-tween.s)/tween.d), e=ease(k);
+    camera.position.lerpVectors(tween.p0,tween.p1,e); const lift=Math.sin(Math.PI*e)*tween.p0.distanceTo(tween.p1)*0.12; camera.position.y+=lift;
+    controls.target.lerpVectors(tween.t0,tween.t1,e); if(k>=1) tween=null; }
+  cur.update?.(dt,elapsed);
+  if(follow){ const p=posOf(follow); const delta=p.clone().sub(lastFollowPos); lastFollowPos.copy(p);
+    if(tween){ tween.p1.add(delta); tween.t1.add(delta); } else { camera.position.add(delta); controls.target.add(delta);} }
+  stars.position.copy(camera.position);
+  controls.update(); updateLabels(); updateDist();
+  renderer.render(scene,camera);
+  // dinamik performans: düşük FPS'te piksel oranı, sonra parçacık sayısı düşürülür
+  frames++; fpsT+=dt; if(fpsT>=2){ const fps=frames/fpsT; $('#fps').textContent=`FPS: ${fps|0} · Piksel oranı: ${renderer.getPixelRatio().toFixed(2)} · Parçacık: %${Math.round(qual*100)}`;
+    if(fps<28){ if(++lowCount>=2){ lowCount=0; const pr=renderer.getPixelRatio(); if(pr>1){renderer.setPixelRatio(Math.max(1,pr-.25));} else if(qual>.5){qual=Math.max(.5,qual-.1);applyQuality();} } } else lowCount=0;
+    frames=0; fpsT=0; }
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+canvas.addEventListener('webglcontextlost',e=>{ e.preventDefault(); window.__showErr('<h2 style="color:#4ff0e6">Grafik bağlamı kaybedildi</h2><p>GPU belleği yetersiz kalmış olabilir. Sayfayı yenileyin ve “Kalite: Düşük” seçeneğini deneyin.</p>'); });
+
+enter('universe',null,false);
+$('#loading').style.opacity=0; setTimeout(()=>$('#loading').remove(),700);
+if(!isMobile) setTimeout(()=>{ if(!selected) showInfo(DATA.universe,null); },2600);
+animate();
+</script>
+</body>
+</html>
